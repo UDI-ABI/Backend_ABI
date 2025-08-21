@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('versions', function (Blueprint $table) {
             $table->id();
-            $table->date('date');
             $table->foreignId('project_id')
                 ->constrained('projects')
                 ->onDelete('cascade')
