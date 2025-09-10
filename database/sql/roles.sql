@@ -2,7 +2,15 @@
 -- ROLES Y PERMISOS EN MYSQL
 -- ======================================
 
--- Crear usuario para estudiantes (sin contraseña aquí)
+-- Crear usuario basico para login
+CREATE USER IF NOT EXISTS 'db_user'@'%' IDENTIFIED BY '{{DB_USER_PASS}}';
+-- Permiso de conexión a la base de datos
+GRANT USAGE ON *.* TO 'db_user'@'%';
+
+-- los usuarios basicos pueden:
+GRANT SELECT ON {{DB_DATABASE}}.users TO 'db_user'@'%';
+
+-- Crear usuario para estudiantes
 CREATE USER IF NOT EXISTS 'db_student'@'%' IDENTIFIED BY '{{DB_STUDENT_PASS}}';
 -- Permiso de conexión a la base de datos
 GRANT USAGE ON *.* TO 'db_student'@'%';

@@ -10,6 +10,7 @@ Write-Host "==> Creando roles..."
 $sqlContent = Get-Content "database/sql/roles.sql" -Raw
 
 # Reemplazar placeholders
+$sqlContent = $sqlContent -replace "{{DB_USER_PASS}}", $envContent.DB_USER_PASS
 $sqlContent = $sqlContent -replace "{{DB_DATABASE}}", $envContent.DB_DATABASE
 $sqlContent = $sqlContent -replace "{{DB_STUDENT_PASS}}", $envContent.DB_STUDENT_PASS
 $sqlContent = $sqlContent -replace "{{DB_PROFESSOR_PASS}}", $envContent.DB_PROFESSOR_PASS
