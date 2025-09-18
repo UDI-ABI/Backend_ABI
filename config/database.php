@@ -69,7 +69,7 @@ return [
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '3306'),
             'database' => env('DB_DATABASE', 'laravel'),
-            'username' => 'db_user',
+            'username' => env('DB_USER_USERNAME', 'db_user'),
             'password' => env('DB_USER_PASS', ''),
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => 'utf8mb4',

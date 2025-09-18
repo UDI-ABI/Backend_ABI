@@ -8,7 +8,11 @@ CREATE USER IF NOT EXISTS 'db_user'@'%' IDENTIFIED BY '{{DB_USER_PASS}}';
 GRANT USAGE ON *.* TO 'db_user'@'%';
 
 -- los usuarios basicos pueden:
-GRANT SELECT ON {{DB_DATABASE}}.users TO 'db_user'@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE ON {{DB_DATABASE}}.users TO 'db_user'@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE ON {{DB_DATABASE}}.password_reset_tokens TO 'db_user'@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE ON {{DB_DATABASE}}.password_resets TO 'db_user'@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE ON {{DB_DATABASE}}.personal_access_tokens TO 'db_user'@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE ON {{DB_DATABASE}}.sessions TO 'db_user'@'%';
 
 -- Crear usuario para estudiantes
 CREATE USER IF NOT EXISTS 'db_student'@'%' IDENTIFIED BY '{{DB_STUDENT_PASS}}';

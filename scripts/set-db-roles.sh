@@ -6,7 +6,7 @@ export $(grep -v '^#' .env | xargs)
 
 # Paso 1: Ejecutar migraciones
 echo "==> Ejecutando migraciones y seeders..."
-php artisan migrate --seed
+php artisan migrate 
 
 # Paso 2: Leer y procesar el archivo SQL
 echo "==> Creando roles..."

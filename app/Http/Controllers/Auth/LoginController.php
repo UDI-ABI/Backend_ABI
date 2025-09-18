@@ -57,7 +57,8 @@ class LoginController extends Controller
         } catch (\Exception $e) {
             Log::error('Database error: ' . $e->getMessage());
 
-            return redirect()->back()->withErrors(['db_error' => 'Inténtelo más tarde.']);
+            // return redirect()->back()->withErrors(['db_error' => 'Inténtelo más tarde.']);
+            dd($e->getMessage()); #ELIMINAR DESPUES DE PRUEBAS
         }
     }
 
@@ -72,7 +73,8 @@ class LoginController extends Controller
     {
         // Redirigir a la página de clientes si el usuario tiene el rol 'user'
         if ($user->role == 'user') {
-            return redirect()->route('clientes.index');
+            // return redirect()->route('clientes.index');
+            return redirect()->route('home'); #ELIMINAR DESPUES DE PRUEBAS
         }
 
         // Redirigir a la página de inicio si no es un 'user'
