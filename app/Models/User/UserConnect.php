@@ -8,6 +8,6 @@ Class UserConnect extends User
 {
     protected $table = 'users';
 
-    // protected $connection = 'mysql_user';
+    protected $connection = 'mysql_user';
 
 }
