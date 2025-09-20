@@ -11,8 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->enum('role', ['research_staff', 'professor', 'student', 'user', 'committee_leader'])->default('user')->after('state');
+        Schema::table('contents', function (Blueprint $table) {
+            // Only these roles are accepted: ['research_staff', 'professor', 'student', 'committee_leader']
+            $table->json('roles');
         });
     }
 
@@ -21,8 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('role');
+        Schema::table('contents', function (Blueprint $table) {
+            $table->dropColumn('roles');
         });
     }
 };
