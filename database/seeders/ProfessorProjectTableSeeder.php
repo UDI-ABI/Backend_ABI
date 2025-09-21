@@ -9,7 +9,7 @@ class ProfessorProjectTableSeeder extends CsvSeeder
 {
     public function __construct()
     {
-        $this->file = '/database/seeders/csvs/professors_project.csv';
+        $this->file = '/database/seeders/csvs/professor_project.csv';
         $this->delimiter = ',';
         $this->truncate = false; // ⬅️ Evita el TRUNCATE
     }

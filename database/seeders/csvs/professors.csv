@@ -1,4 +1,4 @@
-Cedula,Nombre,Apellido,Telefono,committee_leader,city_program_id,user_id,,,,,Correo
+card_id,name,last_name,phone,committee_leader,city_program_id,user_id,,,,,Correo
 746432279,Federico,Manzano,3114567890,1,1,31,,,,,
 916863651,Jose Luis,Capdevila,3009876543,0,2,32,,,,,
 62233422,Erasmo,Mena,3151122334,0,4,33,,,,,
@@ -29,9 +29,3 @@ Cedula,Nombre,Apellido,Telefono,committee_leader,city_program_id,user_id,,,,,Cor
 1077543287,Natalia,Duarte,3211122334,1,4,58,,,,,
 1077765431,Wilson,Ramírez,3112233445,0,11,59,,,,,
 1077987213,Paola,Fuentes,3175566778,0,5,60,,,,,
-,,,,,,,,,,,
-,,,,25,,,,,,,
-,,,,23,,,,,,,
-,,,,20,,,,,,,
-,,,,2,,,,,,,
-,,,,3,,,,,,,
