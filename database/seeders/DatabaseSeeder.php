@@ -1,24 +1,6 @@
 <?php
 
 namespace Database\Seeders;
-
-use App\Models\City;
-use App\Models\CityProgram;
-use App\Models\Content;
-use App\Models\ContentFramework;
-use App\Models\ContentFrameworkProject;
-use App\Models\InvestigationLine;
-use App\Models\Professor;
-use App\Models\Program;
-use App\Models\ProjectStatus;
-use App\Models\ResearchGroup;
-use App\Models\ResearchStaff;
-use App\Models\Student;
-use App\Models\ThematicArea;
-use App\Models\User;
-use App\Models\Version;
-use Google\Service\AIPlatformNotebooks\Resource\Projects;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
