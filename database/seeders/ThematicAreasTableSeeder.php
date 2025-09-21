@@ -3,15 +3,15 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
+use JeroenZwart\CsvSeeder\CsvSeeder;
 
-class ThematicAreasTableSeeder extends Seeder
+class ThematicAreasTableSeeder extends CsvSeeder
 {
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        //
+        parent::run();
     }
 }
