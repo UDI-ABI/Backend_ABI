@@ -8,7 +8,9 @@ use App\Models\Professor;
 use App\Models\ResearchStaff;
 use App\Models\Student;
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Auth\RegistersUsers;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
@@ -18,7 +20,7 @@ class RegisterController extends Controller
 {
     use RegistersUsers;
 
-    // protected $redirectTo = '/register';
+    //protected $redirectTo = '/register';
 
     public function __construct()
     {
@@ -49,7 +51,7 @@ class RegisterController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:20'],            
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'string', 'min:4', 'confirmed'],
             'role' => ['required', 'in:student,professor,committee_leader,research_staff'],
             'card_id' => [
                 'required',
@@ -123,7 +125,7 @@ class RegisterController extends Controller
                 $professor-> name = $data['name'];
                 $professor-> last_name = $data['last_name'];
                 $professor-> phone = $data['phone'];
-                $professor-> committee_leader = $data['role'] === 'committee_leader' ? 1 : ($data['committee_leader'] ?? 0);
+                $professor->committee_leader = $data['role'] === 'committee_leader' ? 1 : 0;
                 $professor-> city_program_id = $data['city_program_id'];
                 $professor-> user_id = $user->id;
                 $professor-> save();
@@ -143,7 +145,27 @@ class RegisterController extends Controller
         return $user;
     }
 
-    
+    public function register(Request $request)
+    {
+        // Validar los datos
+        $this->validator($request->all())->validate();
+
+        // Crear el usuario (sin loguearlo)
+        $user = $this->create($request->all());
+
+        // Disparar evento de registro (opcional, para mantener consistencia)
+        event(new Registered($user));
+
+        // Llamar a tu método registered() que maneja la redirección y el mensaje
+        if ($response = $this->registered($request, $user)) {
+            return $response;
+        }
+
+        // Fallback (esto no debería ejecutarse si registered() devuelve una respuesta)
+        return $request->wantsJson()
+            ? new JsonResponse([], 201)
+            : redirect($this->redirectPath());
+    }
 
     /**
      * Sobrescribe el comportamiento después del registro
