@@ -41,4 +41,9 @@ class Program extends Model
             ? null
             : Str::of($value)->squish()->title()->toString();
     }
+
+    public function cities()
+    {
+        return $this->belongsToMany(City::class, 'city_program');
+    }
 }
