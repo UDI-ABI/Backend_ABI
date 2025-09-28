@@ -94,7 +94,7 @@ return [
             'port' => env('DB_PORT', '3306'),
             'database' => env('DB_DATABASE', 'laravel'),
             'username' => 'db_research_staff',
-            'password' => env('DB_RESEARCH_STAFF_PASS', ''),
+            'password' => env('DB_RESEARCH_PASS', ''),
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
