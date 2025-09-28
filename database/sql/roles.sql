@@ -407,3 +407,6 @@ GRANT SELECT, INSERT, UPDATE ON {{DB_DATABASE}}.students TO 'db_research_staff'@
 GRANT SELECT ON {{DB_DATABASE}}.student_project TO 'db_research_staff'@'172.21.0.8';
 GRANT SELECT, INSERT, UPDATE ON {{DB_DATABASE}}.users TO 'db_research_staff'@'172.21.0.8';
 GRANT SELECT, INSERT, UPDATE ON {{DB_DATABASE}}.research_staff TO 'db_research_staff'@'172.21.0.8';
+
+-- Compatibility with older versions
+FLUSH PRIVILEGES;

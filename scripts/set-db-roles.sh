@@ -19,7 +19,7 @@ sed -e "s|{{DB_USER_PASS}}|$DB_USER_PASS|g" \
     -e "s|{{DB_DATABASE}}|$DB_DATABASE|g" \
     -e "s|{{DB_STUDENT_PASS}}|$DB_STUDENT_PASS|g" \
     -e "s|{{DB_PROFESSOR_PASS}}|$DB_PROFESSOR_PASS|g" \
-    -e "s|{{DB_RESEARCH_PASS}}|$DB_RESEARCH_STAFF_PASS|g" \
+    -e "s|{{DB_RESEARCH_PASS}}|$DB_RESEARCH_PASS|g" \
     "database/sql/roles.sql" > "$temp_file"
 
 # Step 3: Execute SQL in MySQL (with error capture)
