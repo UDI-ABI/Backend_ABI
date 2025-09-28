@@ -4,6 +4,7 @@ namespace App\Models\ResearchStaff;
 
 use App\Models\Professor;
 
+# Extended model to use the connection with the ResearchStaff user, this database user has only the permissions needed by research staff.
 class ResearchStaffProfessor extends Professor
 {
     protected $table = 'professors';
