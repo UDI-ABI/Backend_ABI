@@ -8,7 +8,7 @@ set +a
 
 # Step 1: Run database migrations and seeders
 echo "==> Ejecutando migraciones y seeders..."
-php artisan migrate --seed
+./vendor/bin/sail artisan migrate --seed
 
 # Step 2: Process SQL file with secure placeholder replacements
 echo "==> Creando roles..."

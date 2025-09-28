@@ -14,7 +14,7 @@ $sqlContent = $sqlContent -replace "{{DB_USER_PASS}}", $envContent.DB_USER_PASS
 $sqlContent = $sqlContent -replace "{{DB_DATABASE}}", $envContent.DB_DATABASE
 $sqlContent = $sqlContent -replace "{{DB_STUDENT_PASS}}", $envContent.DB_STUDENT_PASS
 $sqlContent = $sqlContent -replace "{{DB_PROFESSOR_PASS}}", $envContent.DB_PROFESSOR_PASS
-$sqlContent = $sqlContent -replace "{{DB_RESEARCH_PASS}}", $envContent.DB_RESEARCH_PASS
+$sqlContent = $sqlContent -replace "{{DB_RESEARCH_PASS}}", $envContent.DB_RESEARCH_STAFF_PASS
 
 # Save the processed SQL to a temporary file
 $tempFile = "temp_roles.sql"
