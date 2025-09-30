@@ -2,101 +2,57 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ContentVersionRequest;
 use App\Models\ContentVersion;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class ContentVersionController extends Controller
 {
-    /**
-     * Lista los valores diligenciados por contenido y versión.
-     */
-    public function index(Request $request): JsonResponse
+    public function index()
     {
-        $perPage = (int) $request->query('per_page', 15);
-        $perPage = $perPage > 0 ? min($perPage, 100) : 15;
-
-        $query = ContentVersion::query()->with(['content', 'version.project']);
-
-        if ($versionId = $request->query('version_id')) {
-            $query->where('version_id', $versionId);
-        }
-
-        if ($contentId = $request->query('content_id')) {
-            $query->where('content_id', $contentId);
-        }
-
-        if ($projectId = $request->query('project_id')) {
-            $query->whereHas('version', function ($q) use ($projectId) {
-                $q->where('project_id', $projectId);
-            });
-        }
-
-        if ($search = trim((string) $request->query('search', ''))) {
-            $query->where('value', 'like', '%' . $search . '%');
-        }
-
-        $contentVersions = $query
+        $contentVersions = ContentVersion::with(['content', 'version.project'])
             ->orderByDesc('updated_at')
-            ->paginate($perPage)
-            ->withQueryString();
+            ->paginate(15);
 
-        return response()->json($contentVersions);
+        return view('content-versions.index', compact('contentVersions'));
     }
 
-    /**
-     * Registra un nuevo valor de contenido para una versión.
-     */
-    public function store(ContentVersionRequest $request): JsonResponse
+    public function create()
     {
-        $data = $request->validated();
-
-        return DB::transaction(function () use ($data) {
-            $contentVersion = ContentVersion::create($data);
-
-            return response()->json([
-                'message' => 'Contenido diligenciado correctamente.',
-                'data' => $contentVersion->load(['content', 'version.project']),
-            ], 201);
-        });
+        return view('content-versions.create');
     }
 
-    /**
-     * Muestra el detalle de un registro contenido-versión.
-     */
-    public function show(ContentVersion $contentVersion): JsonResponse
+    public function store(Request $request)
+    {
+        ContentVersion::create($request->all());
+
+        return redirect()->route('content-versions.index')
+            ->with('success', 'Contenido diligenciado correctamente.');
+    }
+
+    public function show(ContentVersion $contentVersion)
     {
         $contentVersion->load(['content', 'version.project']);
-
-        return response()->json($contentVersion);
+        return view('content-versions.show', compact('contentVersion'));
     }
 
-    /**
-     * Actualiza el valor de un contenido para una versión.
-     */
-    public function update(ContentVersionRequest $request, ContentVersion $contentVersion): JsonResponse
+    public function edit(ContentVersion $contentVersion)
     {
-        $data = $request->validated();
-
-        return DB::transaction(function () use ($contentVersion, $data) {
-            $contentVersion->update($data);
-
-            return response()->json([
-                'message' => 'Registro actualizado correctamente.',
-                'data' => $contentVersion->load(['content', 'version.project']),
-            ]);
-        });
+        return view('content-versions.edit', compact('contentVersion'));
     }
 
-    /**
-     * Elimina un registro contenido-versión.
-     */
-    public function destroy(ContentVersion $contentVersion): JsonResponse
+    public function update(Request $request, ContentVersion $contentVersion)
+    {
+        $contentVersion->update($request->all());
+
+        return redirect()->route('content-versions.index')
+            ->with('success', 'Registro actualizado correctamente.');
+    }
+
+    public function destroy(ContentVersion $contentVersion)
     {
         $contentVersion->delete();
 
-        return response()->json(null, 204);
+        return redirect()->route('content-versions.index')
+            ->with('success', 'Registro eliminado correctamente.');
     }
 }

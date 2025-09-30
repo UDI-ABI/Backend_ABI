@@ -2,12 +2,12 @@
 
 @section('content')
 <div class="container">
-    <h1>Editar Contenido</h1>
+    <h1>Editar Versión</h1>
 
-    <form action="{{ route('contents.update', $content) }}" method="POST">
+    <form action="{{ route('versions.update', $version) }}" method="POST">
         @csrf
         @method('PUT')
-        @include('contents._form')
+        @include('versions._form')
         <button type="submit" class="btn btn-success">Actualizar</button>
     </form>
 </div>

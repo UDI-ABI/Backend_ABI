@@ -12,6 +12,9 @@ use App\Http\Controllers\InvestigationLineController;
 use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\ResearchGroupController;
 use App\Http\Controllers\ThematicAreaController;
+use App\Http\Controllers\ContentController;
+use App\Http\Controllers\ContentVersionController;
+use App\Http\Controllers\VersionController;
 
 
 Route::get('/', function () {
@@ -67,3 +70,8 @@ Route::get('/obtener-ciudades/{id_departamento}', [DepartmentController::class, 
 //Rutas de framework y content framework project
 Route::resource('frameworks', FrameworkController::class);
 Route::resource('content-framework-projects', ContentFrameworkProjectController::class);
+
+// Rutas de contents, versions y content-versions
+Route::resource('contents', ContentController::class);
+Route::resource('versions', VersionController::class);
+Route::resource('content-versions', ContentVersionController::class);

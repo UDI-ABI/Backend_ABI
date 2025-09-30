@@ -2,13 +2,12 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ContentController;
-use App\Http\Controllers\ContentVersionController;
 use App\Http\Controllers\InvestigationLineController;
 use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\ResearchGroupController;
 use App\Http\Controllers\ThematicAreaController;
-use App\Http\Controllers\VersionController;
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -29,6 +28,4 @@ Route::apiResource('research-groups', ResearchGroupController::class);
 Route::apiResource('programs', ProgramController::class);
 Route::apiResource('investigation-lines', InvestigationLineController::class);
 Route::apiResource('thematic-areas', ThematicAreaController::class);
-Route::apiResource('contents', ContentController::class);
-Route::apiResource('versions', VersionController::class);
-Route::apiResource('content-versions', ContentVersionController::class);
+

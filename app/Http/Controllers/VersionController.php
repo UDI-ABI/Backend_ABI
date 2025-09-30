@@ -2,95 +2,64 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\VersionRequest;
 use App\Models\Version;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class VersionController extends Controller
 {
-    /**
-     * Lista las versiones registradas.
-     */
-    public function index(Request $request): JsonResponse
+    public function index()
     {
-        $perPage = (int) $request->query('per_page', 15);
-        $perPage = $perPage > 0 ? min($perPage, 100) : 15;
-
-        $query = Version::query()->with('project');
-
-        if ($projectId = $request->query('project_id')) {
-            $query->where('project_id', $projectId);
-        }
-
-        $versions = $query
+        $versions = Version::with('project')
             ->orderByDesc('created_at')
-            ->paginate($perPage)
-            ->withQueryString();
+            ->paginate(15);
 
-        return response()->json($versions);
+        return view('versions.index', compact('versions'));
     }
 
-    /**
-     * Crea una nueva versión para un proyecto.
-     */
-    public function store(VersionRequest $request): JsonResponse
+    public function create()
     {
-        $data = $request->validated();
-
-        return DB::transaction(function () use ($data) {
-            $version = Version::create($data);
-
-            return response()->json([
-                'message' => 'Versión creada correctamente.',
-                'data' => $version->load('project'),
-            ], 201);
-        });
+        return view('versions.create');
     }
 
-    /**
-     * Muestra una versión concreta.
-     */
-    public function show(Version $version): JsonResponse
+    public function store(Request $request)
+    {
+        Version::create($request->all());
+
+        return redirect()->route('versions.index')
+            ->with('success', 'Versión creada correctamente.');
+    }
+
+    public function show(Version $version)
     {
         $version->load(['project', 'contents' => function ($query) {
             $query->orderBy('name');
         }]);
 
-        return response()->json($version);
+        return view('versions.show', compact('version'));
     }
 
-    /**
-     * Actualiza los datos de una versión.
-     */
-    public function update(VersionRequest $request, Version $version): JsonResponse
+    public function edit(Version $version)
     {
-        $data = $request->validated();
-
-        return DB::transaction(function () use ($version, $data) {
-            $version->update($data);
-
-            return response()->json([
-                'message' => 'Versión actualizada correctamente.',
-                'data' => $version->load('project'),
-            ]);
-        });
+        return view('versions.edit', compact('version'));
     }
 
-    /**
-     * Elimina una versión.
-     */
-    public function destroy(Version $version): JsonResponse
+    public function update(Request $request, Version $version)
+    {
+        $version->update($request->all());
+
+        return redirect()->route('versions.index')
+            ->with('success', 'Versión actualizada correctamente.');
+    }
+
+    public function destroy(Version $version)
     {
         if ($version->contentVersions()->exists()) {
-            return response()->json([
-                'message' => 'No es posible eliminar la versión porque tiene contenidos diligenciados.',
-            ], 409);
+            return back()->with('error', 'No es posible eliminar la versión porque tiene contenidos diligenciados.');
         }
 
         $version->delete();
 
-        return response()->json(null, 204);
+        return redirect()->route('versions.index')
+            ->with('success', 'Versión eliminada correctamente.');
     }
 }

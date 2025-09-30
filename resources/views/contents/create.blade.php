@@ -1,17 +1,14 @@
 @extends('layouts.app')
 
 @section('content')
-    <h1>Crear Objetivo para {{ $framework->name }}</h1>
-    <form method="POST" action="{{ route('frameworks.contents.store', $framework) }}">
+<div class="container">
+    <h1>Crear Contenido</h1>
+
+    <form action="{{ route('contents.store') }}" method="POST">
         @csrf
-        <div>
-            <label for="name">Nombre</label>
-            <input type="text" id="name" name="name" value="{{ old('name') }}">
-        </div>
-        <div>
-            <label for="description">Descripción</label>
-            <textarea id="description" name="description">{{ old('description') }}</textarea>
-        </div>
-        <button type="submit">Guardar</button>
+        @include('contents._form', ['content' => new App\Models\Content])
+        <button type="submit" class="btn btn-success">Guardar</button>
+        <a href="{{ route('contents.index') }}" class="btn btn-secondary">Atrás</a>
     </form>
+</div>
 @endsection
