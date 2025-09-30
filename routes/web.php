@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\CityController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\FormularioController;
@@ -12,7 +14,7 @@ use App\Http\Controllers\InvestigationLineController;
 use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\ResearchGroupController;
 use App\Http\Controllers\ThematicAreaController;
-
+use App\Http\Controllers\UserController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -22,9 +24,9 @@ Route::get('/home', [\App\Http\Controllers\HomeController::class, 'index'])->nam
 
 // Auth::routes();
 // Basic authentication routes (login, logout, etc.)
-Route::get('login', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
-Route::post('login', [App\Http\Controllers\Auth\LoginController::class, 'login']);
-Route::post('logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
+Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
+Route::post('login', [LoginController::class, 'login']);
+Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 
 Route::middleware(['auth', ' :user'])->group(function () {
     // Routes to obtain cities by department
@@ -35,8 +37,11 @@ Route::middleware(['auth', ' :user'])->group(function () {
 // Protected routes for research_staff role
 Route::middleware(['auth', 'role:research_staff'])->group(function () {
     // New user registration
-    Route::get('register', [App\Http\Controllers\Auth\RegisterController::class, 'showRegistrationForm'])->name('register');
-    Route::post('register', [App\Http\Controllers\Auth\RegisterController::class, 'register']);
+    Route::get('register', [RegisterController::class, 'showRegistrationForm'])->name('register');
+    Route::post('register', [RegisterController::class, 'register']);
+
+    // Users update
+    Route::get('update-user', [UserController::class, 'index']);
 
     // Profile
     Route::get('/perfil', [PerfilController::class, 'edit'])->name('perfil.edit');
