@@ -2,76 +2,106 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\City;
-use Illuminate\Http\Request;
 use App\Models\Department;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class DepartmentController extends Controller
 {
-    public function index()
+    public function index(Request $request): View
     {
-        $departamentos = Department::all();
-        return view('departments.index', compact('deprtaments'));
+        $search = $request->get('search');
+        $perPage = (int) $request->get('per_page', 10);
+        $perPage = $perPage > 0 ? min($perPage, 100) : 10;
+
+        $departments = Department::query()
+            ->withCount('cities')
+            ->when($search, function ($query, string $search) {
+                $query->where('name', 'like', "%{$search}%");
+            })
+            ->orderBy('name')
+            ->paginate($perPage)
+            ->appends($request->query());
+
+        return view('departments.index', [
+            'departments' => $departments,
+            'search' => $search,
+            'perPage' => $perPage,
+        ]);
     }
 
-    public function create()
+    public function create(): View
     {
-        return view('deparaments.create');
-        
-    }
-    
-    public function obtenerCiudades($departamentoId)
-    {
-        $ciudades = City::where('id', $departamentoId)->pluck('city', 'id')->toArray();
-        return response()->json($ciudades);
+        return view('departments.create', [
+            'department' => new Department(),
+        ]);
     }
 
-    public function ciudadesPorDepartamento($id)
+    public function store(Request $request): RedirectResponse
     {
-        // Obtener las ciudades relacionadas con el departamento
-        $departamento = Department::findOrFail($id);
-        $ciudades = $departamento->ciudades()->pluck('city', 'id')->toArray();
-    
-        // Devolver las ciudades en formato JSON
-        return response()->json($ciudades);
-    }
-    
-    public function nuevoMetodoCiudades($id)
-    {
-        $ciudades = City::where('id', $id)->pluck('city', 'id')->toArray();
-        return response()->json($ciudades);
-    }
-    
+        $data = $request->validate([
+            'name' => 'required|string|max:100|unique:departments,name',
+        ]);
 
-    public function store(Request $request)
-    {
-        Department::create($request->all());
-        return redirect()->route('departments.index')->with('success', 'Departamento creado correctamente');
+        $department = Department::create($data);
+
+        return redirect()
+            ->route('departments.index')
+            ->with('success', "Departamento '{$department->name}' creado correctamente.");
     }
 
-    public function show($id)
+    public function show(Department $department): View
     {
-        $departamento = Department::findOrFail($id);
+        $department->load(['cities' => function ($query) {
+            $query->orderBy('name');
+        }]);
+
         return view('departments.show', compact('department'));
     }
 
-    public function edit($id)
+    public function edit(Department $department): View
     {
-        $departamento = Department::findOrFail($id);
         return view('departments.edit', compact('department'));
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, Department $department): RedirectResponse
     {
-        $departamento = Department::findOrFail($id);
-        $departamento->update($request->all());
-        return redirect()->route('departments.index')->with('success', 'Departamento actualizado correctamente');
+        $data = $request->validate([
+            'name' => 'required|string|max:100|unique:departments,name,' . $department->id,
+        ]);
+
+        $department->update($data);
+
+        return redirect()
+            ->route('departments.index')
+            ->with('success', "Departamento '{$department->name}' actualizado correctamente.");
     }
 
-    public function destroy($id)
+    public function destroy(Department $department): RedirectResponse
     {
-        $departamento = Department::findOrFail($id);
-        $departamento->delete();
-        return redirect()->route('departments.index')->with('success', 'Departamento eliminado correctamente');
+        try {
+            $name = $department->name;
+            $department->delete();
+
+            return redirect()
+                ->route('departments.index')
+                ->with('success', "Departamento '{$name}' eliminado correctamente.");
+        } catch (QueryException $exception) {
+            return redirect()
+                ->route('departments.index')
+                ->with('error', 'No se puede eliminar el departamento porque tiene información relacionada.');
+        }
+    }
+
+    public function cities(Department $department): JsonResponse
+    {
+        $cities = $department->cities()
+            ->orderBy('name')
+            ->pluck('name', 'id');
+
+        return response()->json($cities);
     }
 }

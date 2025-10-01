@@ -2,29 +2,22 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class City extends Model
 {
+    use HasFactory;
 
-    protected $table = 'cities'; // Especifica el nombre de la tabla en la base de datos
+    protected $table = 'cities';
 
-    protected $primaryKey = 'id'; // Especifica el nombre de la clave primaria en la tabla
+    protected $fillable = [
+        'name',
+        'department_id',
+    ];
 
-    protected $fillable = ['name']; // Especifica los campos que se pueden asignar de forma masiva
-
-
-
-    
-    // Relación con el modelo Departamento
     public function department()
     {
-        return $this->belongsTo(Department::class, 'id'); // Indica el nombre del modelo Departamento y el nombre de la clave externa
+        return $this->belongsTo(Department::class);
     }
-
-    public function programs()
-    {
-        return $this->belongsToMany(Program::class, 'city_program');
-    }
-
 }
