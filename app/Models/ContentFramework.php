@@ -3,14 +3,16 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * content_frameworks table model, manages communication with the database using the root user, 
- * should not be used by any end user, 
+ * content_frameworks table model, manages communication with the database using the root user,
+ * should not be used by any end user,
  * always use an inherited model with the connection specific to each role.
  */
 class ContentFramework extends Model
 {
+    use SoftDeletes;
     /**
      * The table associated with the model.
      *
