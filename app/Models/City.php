@@ -2,29 +2,51 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Class City
+ * 
+ * Represents the 'cities' table in the database.
+ * This model handles interactions with the 'cities' table using the root database connection.
+ * 
+ * ⚠️ Important:
+ * This model should NOT be used directly by end users.
+ * Always use an inherited model that defines the specific connection for each user role.
+ * 
+ * @package App\Models
+ */
 class City extends Model
 {
+    use HasFactory;
 
-    protected $table = 'cities'; // Especifica el nombre de la tabla en la base de datos
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'cities';
 
-    protected $primaryKey = 'id'; // Especifica el nombre de la clave primaria en la tabla
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
+    protected $fillable = [
+        'name',
+        'department_id',
+    ];
 
-    protected $fillable = ['name']; // Especifica los campos que se pueden asignar de forma masiva
-
-
-
-    
-    // Relación con el modelo Departamento
+    /**
+     * Defines the relationship between City and Department.
+     * 
+     * Each city belongs to a specific department.
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
     public function department()
     {
-        return $this->belongsTo(Department::class, 'id'); // Indica el nombre del modelo Departamento y el nombre de la clave externa
+        return $this->belongsTo(Department::class);
     }
-
-    public function programs()
-    {
-        return $this->belongsToMany(Program::class, 'city_program');
-    }
-
 }
