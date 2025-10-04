@@ -1,16 +1,20 @@
 <?php
 
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\CityController;
-use App\Http\Controllers\ContentFrameworkProjectController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\FormularioController;
-use App\Http\Controllers\FrameworkController;
-use App\Http\Controllers\InvestigationLineController;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\PerfilController;
+use App\Http\Controllers\FrameworkController;
+use App\Http\Controllers\ContentFrameworkProjectController;
+use App\Http\Controllers\InvestigationLineController;
 use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\ResearchGroupController;
 use App\Http\Controllers\ThematicAreaController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\UserController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -18,38 +22,60 @@ Route::get('/', function () {
 
 Route::get('/home', [\App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
-// Rutas de autenticación básicas (login, logout, etc.)
-Route::get('login', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
-Route::post('login', [App\Http\Controllers\Auth\LoginController::class, 'login']);
-Route::post('logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
+// Auth::routes();
+// Basic authentication routes (login, logout, etc.)
+Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
+Route::post('login', [LoginController::class, 'login']);
+Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 
-Route::middleware('auth')->group(function () {
-    Route::get('departments/{department}/cities', [DepartmentController::class, 'cities'])->name('departments.cities');
+Route::middleware(['auth', ' :user'])->group(function () {
+    // Routes to obtain cities by department
+    Route::get('obtener-ciudades-por-departamento/{id}', [DepartmentController::class, 'ciudadesPorDepartamento'])->name('obtener-ciudades-por-departamento');
+    Route::get('/obtener-ciudades/{id_departamento}', [DepartmentController::class, 'ciudadesPorDepartamento']);
 });
 
+// Protected routes for research_staff role
 Route::middleware(['auth', 'role:research_staff'])->group(function () {
-    // Registro de nuevos usuarios
-    Route::get('register', [App\Http\Controllers\Auth\RegisterController::class, 'showRegistrationForm'])->name('register');
-    Route::post('register', [App\Http\Controllers\Auth\RegisterController::class, 'register']);
+    // Users
+    // New user registration
+    Route::get('register', [RegisterController::class, 'showRegistrationForm'])->name('register');
+    Route::post('register', [RegisterController::class, 'register']);
 
-    // Perfil
+    Route::get('user/{user}', [UserController::class, 'show'])->name('users.show');
+    Route::get('users', [UserController::class, 'index'])->name('users.index');
+    Route::get('users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+    Route::put('users/{user}', [UserController::class, 'update'])->name('users.update');
+    Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    Route::put('users/{user}/activate', [UserController::class, 'activate'])->name('users.activate');
+
+    // Profile
     Route::get('/perfil', [PerfilController::class, 'edit'])->name('perfil.edit');
     Route::put('/perfil', [PerfilController::class, 'update'])->name('perfil.update');
+    
+    // 👇 Added routes for Departments and Cities (new addition)
+    // These were added to manage departments and their related cities
+    Route::resource('/departamento', DepartmentController::class);
+    Route::get('/departamentos', [DepartmentController::class, 'index'])->name('departamentos.index');
+    Route::get('/obtener-ciudades-por-departamento/{id}', [DepartmentController::class, 'ciudadesPorDepartamento'])->name('obtener-ciudades-por-departamento');
 
-    // Departamentos y ciudades
-    Route::resource('departments', DepartmentController::class);
-    Route::resource('cities', CityController::class);
+    Route::resource('/ciudad', CityController::class);
+    Route::get('obtener-ciudades-por-departamento/{id}', [CityController::class, 'obtenerCiudadesPorDepartamento']);
+    // 👆 End of added routes
 
-    // Formularios
-    Route::resource('formulario', FormularioController::class);
+    // Forms
+    Route::resource('/formulario', FormularioController::class);
 
-    // Estructura académica avanzada
+    // Academic part structure
     Route::resource('research-groups', ResearchGroupController::class);
     Route::resource('programs', ProgramController::class);
     Route::resource('investigation-lines', InvestigationLineController::class);
     Route::resource('thematic-areas', ThematicAreaController::class);
-
-    // Frameworks
-    Route::resource('frameworks', FrameworkController::class);
-    Route::resource('content-framework-projects', ContentFrameworkProjectController::class);
 });
+
+// Public routes for departments and cities (if you need them without authentication)
+Route::get('/obtener-ciudades-por-departamento/{id}', [DepartmentController::class, 'ciudadesPorDepartamento'])->name('obtener-ciudades-por-departamento');
+Route::get('/obtener-ciudades/{id_departamento}', [DepartmentController::class, 'ciudadesPorDepartamento']);Route::resource('/framework', App\Http\Controllers\FrameworkController::class);
+
+//Framework routes and content framework project
+Route::resource('frameworks', FrameworkController::class);
+Route::resource('content-framework-projects', ContentFrameworkProjectController::class);
