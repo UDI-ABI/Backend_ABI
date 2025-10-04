@@ -10,74 +10,101 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Class FrameworkController
- * @package App\Http\Controllers
+ * Controlador para la gestión de frameworks
+ *
+ * Maneja el CRUD completo de frameworks con soft delete,
+ * validaciones robustas, búsqueda avanzada y logging de operaciones.
  */
 class FrameworkController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Muestra el listado de frameworks con opciones de filtrado
+     *
+     * Permite filtrar por búsqueda de texto (nombre, descripción, ID)
+     * y por año (frameworks vigentes en ese año).
+     *
+     * @param Request $request Parámetros de consulta
+     * @return View Vista con listado paginado de frameworks
      */
     public function index(Request $request): View
     {
-        // Obtener parámetros de filtrado y búsqueda
-        $search = $request->get('search');
-        $year = $request->get('year');
-        $perPageOptions = [10, 20, 30];
-        $perPage = (int) $request->get('per_page', $perPageOptions[0]);
+        try {
+            // Obtener parámetros de filtrado y búsqueda
+            $search = $request->get('search');
+            $year = $request->get('year');
+            $perPageOptions = [10, 20, 30];
+            $perPage = (int) $request->get('per_page', $perPageOptions[0]);
 
-        if (! in_array($perPage, $perPageOptions, true)) {
-            $perPage = $perPageOptions[0];
+            // Validar que per_page esté en las opciones permitidas
+            if (! in_array($perPage, $perPageOptions, true)) {
+                $perPage = $perPageOptions[0];
+            }
+
+            // Query base - solo frameworks no eliminados
+            $query = Framework::query();
+
+            // Aplicar filtro de búsqueda
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', '%' . $search . '%')
+                        ->orWhere('description', 'like', '%' . $search . '%');
+
+                    // Si la búsqueda es numérica, también buscar por ID
+                    if (is_numeric($search)) {
+                        $q->orWhere('id', $search);
+                    }
+                });
+            }
+
+            // Aplicar filtro por año
+            if ($year) {
+                $query->where(function ($q) use ($year) {
+                    $q->where('start_year', '<=', $year)
+                        ->where(function ($subQ) use ($year) {
+                            $subQ->whereNull('end_year')
+                                ->orWhere('end_year', '>=', $year);
+                        });
+                });
+            }
+
+            // Ordenamiento por defecto
+            $query->orderBy('start_year', 'desc')
+                ->orderBy('name', 'asc');
+
+            // Paginación
+            $frameworks = $query->paginate($perPage);
+
+            // Mantener parámetros en paginación
+            $frameworks->appends($request->query());
+
+            return view('framework.index', [
+                'frameworks' => $frameworks,
+                'search' => $search,
+                'year' => $year,
+                'perPage' => $perPage,
+                'perPageOptions' => $perPageOptions,
+                'i' => ($frameworks->currentPage() - 1) * $frameworks->perPage(),
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error al listar frameworks: ' . $e->getMessage());
+
+            return view('framework.index', [
+                'frameworks' => collect(),
+                'search' => '',
+                'year' => null,
+                'perPage' => 10,
+                'perPageOptions' => [10, 20, 30],
+                'i' => 0,
+                'error' => 'Ocurrió un error al cargar los frameworks.',
+            ]);
         }
-
-        // Query base
-        $query = Framework::query();
-
-        // Aplicar filtros
-        if ($search) {
-            // Búsqueda por nombre, descripción o ID
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', '%' . $search . '%')
-                    ->orWhere('description', 'like', '%' . $search . '%');
-
-                // Si la búsqueda es numérica, también buscar por ID
-                if (is_numeric($search)) {
-                    $q->orWhere('id', $search);
-                }
-            });
-        }
-
-        if ($year) {
-            $query->where(function ($q) use ($year) {
-                $q->where('start_year', '<=', $year)
-                    ->where(function ($subQ) use ($year) {
-                        $subQ->whereNull('end_year')
-                            ->orWhere('end_year', '>=', $year);
-                    });
-            });
-        }
-
-        // Ordenamiento por defecto
-        $query->orderBy('start_year', 'desc')
-            ->orderBy('name', 'asc');
-
-        $frameworks = $query->paginate($perPage);
-
-        // Mantener parámetros en paginación
-        $frameworks->appends($request->query());
-
-        return view('framework.index', [
-            'frameworks' => $frameworks,
-            'search' => $search,
-            'year' => $year,
-            'perPage' => $perPage,
-            'perPageOptions' => $perPageOptions,
-            'i' => ($frameworks->currentPage() - 1) * $frameworks->perPage(),
-        ]);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Muestra el formulario para crear un nuevo framework
+     *
+     * @return View Vista del formulario de creación
      */
     public function create(): View
     {
@@ -86,11 +113,15 @@ class FrameworkController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Almacena un nuevo framework en la base de datos
+     *
+     * @param Request $request Datos del formulario
+     * @return RedirectResponse Redirección con mensaje de resultado
      */
     public function store(Request $request): RedirectResponse
     {
         try {
+            // Validar datos de entrada
             $validatedData = $request->validate(Framework::$rules, [
                 'name.required' => 'El nombre del framework es obligatorio.',
                 'name.unique' => 'Ya existe un framework con este nombre.',
@@ -104,25 +135,31 @@ class FrameworkController extends Controller
                 'end_year.after_or_equal' => 'El año de fin debe ser posterior o igual al año de inicio.',
             ]);
 
-            DB::beginTransaction();
-            
-            $validatedData['link'] = $validatedData['link'] ?? '';
+            return DB::transaction(function () use ($validatedData) {
+                // Asegurar que link no sea null
+                $validatedData['link'] = $validatedData['link'] ?? '';
 
-            $framework = Framework::create($validatedData);
-            
-            DB::commit();
+                // Crear framework
+                $framework = Framework::create($validatedData);
 
-            return redirect()->route('frameworks.index')
-                ->with('success', "Framework '{$framework->name}' creado exitosamente.");
+                // Registrar evento en logs
+                Log::info('Framework creado', [
+                    'framework_id' => $framework->id,
+                    'framework_name' => $framework->name,
+                    'user_id' => auth()->id(),
+                ]);
+
+                return redirect()->route('frameworks.index')
+                    ->with('success', "Framework '{$framework->name}' creado exitosamente.");
+            });
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             return redirect()->back()
                 ->withErrors($e->validator)
                 ->withInput();
         } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Error creating framework: ' . $e->getMessage());
-            
+            Log::error('Error al crear framework: ' . $e->getMessage());
+
             return redirect()->back()
                 ->with('error', 'Ocurrió un error al crear el framework. Por favor, intente nuevamente.')
                 ->withInput();
@@ -130,28 +167,48 @@ class FrameworkController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Muestra el detalle de un framework específico
+     *
+     * @param Framework $framework Framework a mostrar
+     * @return View Vista con detalle del framework
      */
-     public function show(Framework $framework): View
+    public function show(Framework $framework): View
     {
+        // Verificar si fue eliminado
+        if ($framework->trashed()) {
+            abort(404, 'El framework no está disponible.');
+        }
+
         return view('framework.show', compact('framework'));
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Muestra el formulario para editar un framework
+     *
+     * @param Framework $framework Framework a editar
+     * @return View Vista del formulario de edición
      */
     public function edit(Framework $framework): View
     {
+        // Verificar si fue eliminado
+        if ($framework->trashed()) {
+            abort(404, 'El framework no está disponible.');
+        }
+
         return view('framework.edit', compact('framework'));
     }
 
     /**
-     * Update the specified resource in storage.
+     * Actualiza un framework existente en la base de datos
+     *
+     * @param Request $request Datos del formulario
+     * @param Framework $framework Framework a actualizar
+     * @return RedirectResponse Redirección con mensaje de resultado
      */
     public function update(Request $request, Framework $framework): RedirectResponse
     {
         try {
-            // Usar las reglas básicas sin considerar unicidad del nombre para el mismo registro
+            // Reglas de validación excluyendo el framework actual en unicidad
             $rules = [
                 'name' => 'required|unique:frameworks,name,' . $framework->id,
                 'description' => 'required|min:10',
@@ -160,6 +217,7 @@ class FrameworkController extends Controller
                 'end_year' => 'nullable|integer|after_or_equal:start_year',
             ];
 
+            // Validar datos
             $validatedData = $request->validate($rules, [
                 'name.required' => 'El nombre del framework es obligatorio.',
                 'name.unique' => 'Ya existe otro framework con este nombre.',
@@ -173,25 +231,37 @@ class FrameworkController extends Controller
                 'end_year.after_or_equal' => 'El año de fin debe ser posterior o igual al año de inicio.',
             ]);
 
-            DB::beginTransaction();
-            
-            $validatedData['link'] = $validatedData['link'] ?? '';
+            return DB::transaction(function () use ($framework, $validatedData) {
+                // Verificar si fue eliminado
+                if ($framework->trashed()) {
+                    return redirect()->route('frameworks.index')
+                        ->with('error', 'No se puede actualizar un framework eliminado.');
+                }
 
-            $framework->update($validatedData);
-            
-            DB::commit();
+                // Asegurar que link no sea null
+                $validatedData['link'] = $validatedData['link'] ?? '';
 
-            return redirect()->route('frameworks.index')
-                ->with('success', "Framework '{$framework->name}' actualizado exitosamente.");
+                // Actualizar framework
+                $framework->update($validatedData);
+
+                // Registrar evento en logs
+                Log::info('Framework actualizado', [
+                    'framework_id' => $framework->id,
+                    'framework_name' => $framework->name,
+                    'user_id' => auth()->id(),
+                ]);
+
+                return redirect()->route('frameworks.index')
+                    ->with('success', "Framework '{$framework->name}' actualizado exitosamente.");
+            });
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             return redirect()->back()
                 ->withErrors($e->validator)
                 ->withInput();
         } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Error updating framework: ' . $e->getMessage());
-            
+            Log::error('Error al actualizar framework: ' . $e->getMessage());
+
             return redirect()->back()
                 ->with('error', 'Ocurrió un error al actualizar el framework. Por favor, intente nuevamente.')
                 ->withInput();
@@ -199,34 +269,94 @@ class FrameworkController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Elimina lógicamente (soft delete) un framework
+     *
+     * Verifica que no tenga contenidos asociados antes de eliminar.
+     *
+     * @param Framework $framework Framework a eliminar
+     * @return RedirectResponse Redirección con mensaje de resultado
      */
     public function destroy(Framework $framework): RedirectResponse
     {
         try {
-            // Verificar si puede ser eliminado (si tiene contenidos asociados)
-            if ($framework->contentFrameworks()->exists()) {
+            return DB::transaction(function () use ($framework) {
+                // Verificar si ya fue eliminado
+                if ($framework->trashed()) {
+                    return redirect()->route('frameworks.index')
+                        ->with('error', 'El framework ya fue eliminado.');
+                }
+
+                // Verificar si tiene contenidos asociados
+                if ($framework->contentFrameworks()->exists()) {
+                    return redirect()->route('frameworks.index')
+                        ->with('error', 'No se puede eliminar el framework porque tiene contenidos asociados.');
+                }
+
+                $frameworkName = $framework->name;
+
+                // Realizar soft delete
+                $framework->delete();
+
+                // Registrar evento en logs
+                Log::info('Framework eliminado', [
+                    'framework_id' => $framework->id,
+                    'framework_name' => $frameworkName,
+                    'user_id' => auth()->id(),
+                ]);
+
                 return redirect()->route('frameworks.index')
-                    ->with('error', 'No se puede eliminar el framework porque tiene contenidos asociados.');
-            }
-
-            DB::beginTransaction();
-
-            $frameworkName = $framework->name;
-            $framework->delete();
-
-            DB::commit();
-
-            return redirect()->route('frameworks.index')
-                ->with('success', "Framework '{$frameworkName}' eliminado exitosamente.");
+                    ->with('success', "Framework '{$frameworkName}' eliminado exitosamente.");
+            });
 
         } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Error deleting framework: ' . $e->getMessage());
+            Log::error('Error al eliminar framework: ' . $e->getMessage());
 
             return redirect()->route('frameworks.index')
                 ->with('error', 'Ocurrió un error al eliminar el framework. Por favor, intente nuevamente.');
         }
     }
 
+    /**
+     * Restaura un framework eliminado lógicamente
+     *
+     * @param int $id ID del framework a restaurar
+     * @return RedirectResponse Redirección con mensaje de resultado
+     */
+    public function restore(int $id): RedirectResponse
+    {
+        try {
+            return DB::transaction(function () use ($id) {
+                // Buscar framework incluyendo eliminados
+                $framework = Framework::withTrashed()->findOrFail($id);
+
+                // Verificar si está eliminado
+                if (!$framework->trashed()) {
+                    return redirect()->route('frameworks.index')
+                        ->with('error', 'El framework no está eliminado.');
+                }
+
+                // Restaurar
+                $framework->restore();
+
+                // Registrar evento en logs
+                Log::info('Framework restaurado', [
+                    'framework_id' => $framework->id,
+                    'framework_name' => $framework->name,
+                    'user_id' => auth()->id(),
+                ]);
+
+                return redirect()->route('frameworks.index')
+                    ->with('success', "Framework '{$framework->name}' restaurado correctamente.");
+            });
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return redirect()->route('frameworks.index')
+                ->with('error', 'No se encontró el framework especificado.');
+        } catch (\Exception $e) {
+            Log::error('Error al restaurar framework: ' . $e->getMessage());
+
+            return redirect()->route('frameworks.index')
+                ->with('error', 'Ocurrió un error al restaurar el framework.');
+        }
+    }
 }

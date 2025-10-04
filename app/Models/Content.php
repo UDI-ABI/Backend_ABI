@@ -6,15 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * content table model, manages communication with the database using the root user, 
- * should not be used by any end user, 
+ * content table model, manages communication with the database using the root user,
+ * should not be used by any end user,
  * always use an inherited model with the connection specific to each role.
  */
 class Content extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     /**
      * Roles allowed for content association.
