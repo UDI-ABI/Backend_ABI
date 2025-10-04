@@ -2,15 +2,25 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * city table model, manages communication with the database using the root user, 
- * should not be used by any end user, 
- * always use an inherited model with the connection specific to each role.
+ * Class City
+ * 
+ * Represents the 'cities' table in the database.
+ * This model handles interactions with the 'cities' table using the root database connection.
+ * 
+ * ⚠️ Important:
+ * This model should NOT be used directly by end users.
+ * Always use an inherited model that defines the specific connection for each user role.
+ * 
+ * @package App\Models
  */
 class City extends Model
 {
+    use HasFactory;
+
     /**
      * The table associated with the model.
      *
@@ -21,26 +31,22 @@ class City extends Model
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<int, string>
+     * @var array
      */
-    protected $fillable = ['name'];
+    protected $fillable = [
+        'name',
+        'department_id',
+    ];
 
     /**
-     * Get the department that owns the city.
+     * Defines the relationship between City and Department.
+     * 
+     * Each city belongs to a specific department.
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function department()
     {
         return $this->belongsTo(Department::class);
     }
-
-    /**
-     * Get the programs offered in this city.
-     *
-     * This relationship goes through the 'city_program' pivot table.
-     */
-    public function programs()
-    {
-        return $this->belongsToMany(Program::class, 'city_program');
-    }
-
 }
