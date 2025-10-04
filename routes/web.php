@@ -81,7 +81,7 @@ Route::resource('/framework', App\Http\Controllers\FrameworkController::class);
 Route::resource('frameworks', FrameworkController::class);
 Route::resource('content-framework-projects', ContentFrameworkProjectController::class);
 
-// Public routes for contents, versions and content-versions
+//Public routes for contents, versions and content-versions
 Route::resource('contents', ContentController::class);
 Route::resource('versions', VersionController::class);
 Route::resource('content-versions', ContentVersionController::class);
