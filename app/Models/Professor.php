@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * professors table model, manages communication with the database using the root user, 
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Professor extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     /**
      * The attributes that are guarded from mass assignment.
@@ -28,7 +29,7 @@ class Professor extends Model
      */
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
     /**
@@ -36,7 +37,7 @@ class Professor extends Model
      */
     public function cityProgram()
     {
-        return $this->belongsTo(CityProgram::class);
+        return $this->belongsTo(CityProgram::class, 'city_program_id', 'id');
     }
 
     /**
@@ -44,6 +45,6 @@ class Professor extends Model
      */
     public function projects()
     {
-        return $this->hasMany(Project::class);
+        return $this->hasMany(Project::class, 'professor_project', 'professor_id', 'project_id');
     }
 }
