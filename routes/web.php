@@ -16,6 +16,7 @@ use App\Http\Controllers\ResearchGroupController;
 use App\Http\Controllers\ThematicAreaController;
 use App\Http\Controllers\UserController;
 
+
 Route::get('/', function () {
     return view('welcome');
 });
@@ -68,6 +69,28 @@ Route::middleware(['auth', 'role:research_staff'])->group(function () {
     Route::resource('programs', ProgramController::class);
     Route::resource('investigation-lines', InvestigationLineController::class);
     Route::resource('thematic-areas', ThematicAreaController::class);
+
+    // Catálogo de contenidos y versiones (interfaces Tablar)
+    Route::view('contents', 'contents.index')->name('contents.index');
+
+    Route::view('versions', 'versions.index')->name('versions.index');
+    Route::view('versions/create', 'versions.create')->name('versions.create');
+    Route::get('versions/{versionId}/edit', function (int $versionId) {
+        return view('versions.edit', ['versionId' => $versionId]);
+    })->name('versions.edit');
+    Route::get('versions/{versionId}', function (int $versionId) {
+     return view('versions.show', ['versionId' => $versionId]);
+    })->name('versions.show');
+
+    Route::view('content-versions', 'content-versions.index')->name('content-versions.index');
+    Route::view('content-versions/create', 'content-versions.create')->name('content-versions.create');
+    Route::get('content-versions/{contentVersionId}/edit', function (int $contentVersionId) {
+        return view('content-versions.edit', ['contentVersionId' => $contentVersionId]);
+    })->name('content-versions.edit');
+    Route::get('content-versions/{contentVersionId}', function (int $contentVersionId) {
+        return view('content-versions.show', ['contentVersionId' => $contentVersionId]);
+    })->name('content-versions.show');
+
 });
 
 // Public routes for departments and cities (if you need them without authentication)
@@ -77,3 +100,4 @@ Route::resource('/framework', App\Http\Controllers\FrameworkController::class);
 //Framework routes and content framework project
 Route::resource('frameworks', FrameworkController::class);
 Route::resource('content-framework-projects', ContentFrameworkProjectController::class);
+
