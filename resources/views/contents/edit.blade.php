@@ -1,43 +1,86 @@
 {{--
     View path: contents/edit.blade.php.
-    Purpose: Renders the edit.blade view for the Contents module.
-    Expected variables within this template: $content, $fw.
-    No additional partials are included within this file.
-    All markup below follows Tablar styling conventions for visual consistency.
+    Purpose: Provides a Tablar-styled form to update an existing content record
+    while leveraging the shared form partial for consistency.
 --}}
-@extends('layouts.app')
+@extends('tablar::page')
+
+@php
+    use App\Models\Content;
+    $roleLabels = [
+        'research_staff' => 'Equipo de investigación',
+        'professor' => 'Profesor',
+        'student' => 'Estudiante',
+        'committee_leader' => 'Líder de comité',
+    ];
+    $selectedRoles = old('roles', $content->roles ?? []);
+    if (! is_array($selectedRoles)) {
+        $selectedRoles = array_filter([$selectedRoles]);
+    }
+@endphp
+
+@section('title', 'Editar contenido')
 
 @section('content')
-    {{-- Heading informs administrators they are modifying an existing learning objective. --}}
-    <h1>Editar Objetivo</h1>
-    {{-- Form element sends the captured data to the specified endpoint. --}}
-    <form method="POST" action="{{ route('contents.update', $content) }}">
-        @csrf
-        @method('PUT')
-        <div>
-            {{-- Label describing the purpose of 'Nombre'. --}}
-            <label for="name">Nombre</label>
-            {{-- Input element used to capture the 'name' value. --}}
-            <input type="text" id="name" name="name" value="{{ old('name', $content->name) }}">
+    <div class="page-header d-print-none">
+        <div class="container-xl">
+            <div class="row g-2 align-items-center">
+                <div class="col">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{{ route('catalog.contents') }}">Contenidos</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Editar contenido</li>
+                        </ol>
+                    </nav>
+                    <h2 class="page-title d-flex align-items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg me-2 text-primary" width="32" height="32" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M12 20l4 -16" />
+                            <path d="M8 20l4 -16" />
+                            <path d="M4 20l4 -16" />
+                            <path d="M16 20l4 -16" />
+                        </svg>
+                        Actualizar contenido #{{ $content->id }}
+                    </h2>
+                    <p class="text-muted mb-0">Modifica los datos del contenido y define qué roles pueden gestionarlo.</p>
+                </div>
+                <div class="col-auto ms-auto d-print-none">
+                    <a href="{{ route('catalog.contents') }}" class="btn btn-outline-secondary">
+                        Volver al listado
+                    </a>
+                </div>
+            </div>
         </div>
-        <div>
-            {{-- Label describing the purpose of 'Descripción'. --}}
-            <label for="description">Descripción</label>
-            {{-- Multiline textarea allowing a detailed description for 'description'. --}}
-            <textarea id="description" name="description">{{ old('description', $content->description) }}</textarea>
+    </div>
+
+    <div class="page-body">
+        <div class="container-xl">
+            <div class="row">
+                <div class="col-12 col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Información general</h3>
+                        </div>
+                        <form method="POST" action="{{ route('contents.update', $content) }}" class="card-body">
+                            @csrf
+                            @method('PUT')
+                            @include('contents.form', ['content' => $content, 'selectedRoles' => $selectedRoles ?? []])
+                            <div class="d-flex justify-content-end gap-2">
+                                <a href="{{ route('catalog.contents') }}" class="btn btn-link">Cancelar</a>
+                                <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div>
-            {{-- Label describing the purpose of 'Framework'. --}}
-            <label for="framework_id">Framework</label>
-            {{-- Dropdown presenting the available options for 'framework_id'. --}}
-            <select id="framework_id" name="framework_id">
-                @foreach(\App\Models\Framework::all() as $fw)
-                    <option value="{{ $fw->id }}" {{ old('framework_id', $content->framework_id) == $fw->id ? 'selected' : '' }}>{{ $fw->name }}</option>
-                @endforeach
-            </select>
-        </div>
-        {{-- Action row groups navigation and submit controls for clarity. --}}
-        {{-- Button element of type 'submit' to trigger the intended action. --}}
-        <button type="submit">Actualizar</button>
-    </form>
+    </div>
 @endsection
+
+@push('css')
+    <style>
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, .08);
+        }
+    </style>
+@endpush
