@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 /**
@@ -15,7 +16,7 @@ use Illuminate\Support\Str;
  */
 class Project extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -68,7 +69,7 @@ class Project extends Model
      */
     public function thematicArea(): BelongsTo
     {
-        return $this->belongsTo(ThematicArea::class);
+        return $this->belongsTo(ThematicArea::class, 'thematic_area_id', 'id');
     }
 
     /**
@@ -76,6 +77,6 @@ class Project extends Model
      */
     public function versions(): HasMany
     {
-        return $this->hasMany(Version::class);
+        return $this->hasMany(Version::class, 'project_id', 'id');
     }
 }

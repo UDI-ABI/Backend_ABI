@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 /**
@@ -12,6 +13,7 @@ use Illuminate\Support\Str;
  */
 class ThematicArea extends Model
 {
+    use SoftDeletes;
     /**
      * The attributes that are mass assignable.
      *
@@ -28,7 +30,12 @@ class ThematicArea extends Model
      */
     public function investigationLine()
     {
-        return $this->belongsTo(InvestigationLine::class);
+        return $this->belongsTo(InvestigationLine::class, 'investigation_line_id', 'id');
+    }
+
+    public function projects()
+    {
+        return $this->hasMany(Project::class, 'thematic_area_id', 'id');
     }
 
     /**
