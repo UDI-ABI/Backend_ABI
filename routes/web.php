@@ -15,6 +15,7 @@ use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\ResearchGroupController;
 use App\Http\Controllers\ThematicAreaController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ProjectEvaluationController;
 
 
 Route::get('/', function () {
@@ -92,6 +93,15 @@ Route::middleware(['auth', 'role:research_staff'])->group(function () {
     })->name('content-versions.show');
 
 });
+
+
+Route::middleware(['auth', 'role:committee_leader'])->group(function () {
+    Route::get('/project-evaluation', [ProjectEvaluationController::class, 'index'])
+        ->name('project_evaluation.index');
+    Route::post('/project-evaluation/{project}', [ProjectEvaluationController::class, 'evaluate'])
+        ->name('project_evaluation.evaluate');
+});
+
 
 // Public routes for departments and cities (if you need them without authentication)
 Route::get('/obtener-ciudades-por-departamento/{id}', [DepartmentController::class, 'ciudadesPorDepartamento'])->name('obtener-ciudades-por-departamento');
