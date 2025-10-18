@@ -95,12 +95,13 @@ Route::middleware(['auth', 'role:research_staff'])->group(function () {
 });
 
 
-Route::middleware(['auth', 'role:committee_leader'])->group(function () {
-    Route::get('/project-evaluation', [ProjectEvaluationController::class, 'index'])
-        ->name('project_evaluation.index');
-    Route::post('/project-evaluation/{project}', [ProjectEvaluationController::class, 'evaluate'])
-        ->name('project_evaluation.evaluate');
+Route::middleware(['auth', 'role:committee_leader'])->prefix('projects/evaluation')->name('projects.evaluation.')->group(function () {
+    Route::get('/', [ProjectEvaluationController::class, 'index'])->name('index');
+    Route::get('/{project}', [ProjectEvaluationController::class, 'show'])->name('show');
+    Route::post('/{project}/evaluate', [ProjectEvaluationController::class, 'evaluate'])->name('evaluate');
 });
+
+
 
 
 // Public routes for departments and cities (if you need them without authentication)

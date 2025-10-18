@@ -59,9 +59,9 @@ class Project extends Model
     /**
      * Get the status associated with the project.
      */
-    public function status(): BelongsTo
+    public function projectStatus()
     {
-        return $this->belongsTo(ProjectStatus::class, 'project_status_id');
+        return $this->belongsTo(ProjectStatus::class, 'project_status_id', 'id');
     }
 
     /**
@@ -78,5 +78,20 @@ class Project extends Model
     public function versions(): HasMany
     {
         return $this->hasMany(Version::class, 'project_id', 'id');
+    }
+
+    public function professors()
+    {
+        return $this->belongsToMany(Professor::class, 'professor_project', 'project_id', 'professor_id');
+    }
+
+    public function students()
+    {
+        return $this->belongsToMany(Student::class, 'student_project', 'project_id', 'student_id');
+    }
+
+    public function contentFrameworkProjects()
+    {
+        return $this->hasMany(ContentFrameworkProject::class, 'project_id', 'id');
     }
 }

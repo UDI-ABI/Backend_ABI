@@ -4,88 +4,117 @@ namespace App\Http\Controllers;
 
 use App\Models\Project;
 use App\Models\Content;
-use App\Models\Version;
 use App\Models\ContentVersion;
+use App\Models\Professor;
+use App\Models\ProjectStatus;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class ProjectEvaluationController extends Controller
 {
     /**
-     * Muestra los proyectos pendientes de aprobación.
+     * Muestra los proyectos pendientes para el líder de comité autenticado.
      */
     public function index()
     {
-        // Solo proyectos en estado “Pendiente de aprobación”
-        // (ajusta el ID según tu tabla project_statuses)
-        $pendingProjects = Project::whereHas('status', function ($query) {
-            $query->where('name', 'Pendiente de aprobación');
-        })->get();
+        // 1️⃣ Obtener el registro del profesor asociado al usuario autenticado (líder de comité)
+        $professor = Professor::where('user_id', Auth::id())
+            ->where('committee_leader', true)
+            ->whereNull('deleted_at') // evitar profesores soft-deleted
+            ->first();
 
-        return view('project_evaluation.index', compact('pendingProjects'));
+        // 2️⃣ Validar que tenga city_program_id
+        if (!$professor || !$professor->city_program_id) {
+            abort(403, 'No se pudo determinar el programa del líder de comité.');
+        }
+
+        $cityProgramId = $professor->city_program_id;
+
+        // 3️⃣ Filtrar proyectos según city_program del profesor líder
+        $projects = Project::whereHas('projectStatus', function ($query) {
+                $query->where('name', 'Pendiente de aprobación');
+            })
+            ->where(function ($query) use ($cityProgramId) {
+                $query->whereHas('students', function ($sub) use ($cityProgramId) {
+                    $sub->where('city_program_id', $cityProgramId);
+                })
+                ->orWhereHas('professors', function ($sub) use ($cityProgramId) {
+                    $sub->where('city_program_id', $cityProgramId);
+                });
+            })
+            ->with([
+                'projectStatus',
+                'thematicArea.investigationLine',
+                'versions.contentVersions.content',
+                'contentFrameworkProjects.contentFramework.framework',
+                'students',
+                'professors'
+            ])
+            ->get();
+
+        return view('projects.evaluation.index', compact('projects'));
     }
 
-    /**
-     * Procesa la evaluación de un proyecto.
-     * - Aprobado o Rechazado → solo cambia el estado.
-     * - Devuelto para corrección → crea un nuevo ContentVersion con comentarios.
-     */
-    public function evaluate(Request $request, $projectId)
+   // app/Http/Controllers/ProjectEvaluationController.php
+
+    public function show(Project $project)
     {
-        $request->validate([
+        // Cargar relaciones necesarias
+        $project->load([
+            'projectStatus',
+            'thematicArea.investigationLine',
+            'versions.contentVersions.content',
+            'contentFrameworkProjects.contentFramework.framework',
+            'students',
+            'professors',
+        ]);
+
+        // Última versión del proyecto
+        $latestVersion = $project->versions()->latest('created_at')->first();
+
+        return view('projects.evaluation.show', compact('project', 'latestVersion'));
+    }
+
+    public function evaluate(Request $request, Project $project)
+    {
+        $validated = $request->validate([
             'status' => 'required|string|in:Aprobado,Rechazado,Devuelto para corrección',
             'comments' => 'nullable|string',
         ]);
 
-        $project = Project::findOrFail($projectId);
+        $statusName = $validated['status'];
 
-        DB::beginTransaction();
+        // Buscar estado correspondiente
+        $status = ProjectStatus::where('name', $statusName)->first();
+        if (!$status) {
+            return back()->with('error', 'No se encontró el estado seleccionado.');
+        }
 
-        try {
-            // Buscar ID del nuevo estado
-            $newStatusId = DB::table('project_statuses')
-                ->where('name', $request->status)
-                ->value('id');
+        // Actualizar estado del proyecto
+        $project->update(['project_status_id' => $status->id]);
 
-            if (!$newStatusId) {
-                throw new \Exception("No se encontró el estado '{$request->status}'");
-            }
+        // Si se devolvió para corrección, crear ContentVersion
+        if ($statusName === 'Devuelto para corrección') {
+            $latestVersion = $project->versions()->latest('created_at')->first();
 
-            // Si el estado es "Devuelto para corrección"
-            if ($request->status === 'Devuelto para corrección') {
-                // Última versión
-                $latestVersion = $project->versions()->latest('created_at')->first();
-
-                if (!$latestVersion) {
-                    throw new \Exception("No se encontró una versión previa para este proyecto");
-                }
-
-                // Buscar contenido “Comentarios” del comité
+            if ($latestVersion) {
                 $commentContent = Content::where('name', 'Comentarios')
                     ->where('role', 'committee_leader')
                     ->first();
 
-                if (!$commentContent) {
-                    throw new \Exception("No se encontró el contenido 'Comentarios' para committee_leader");
+                if ($commentContent) {
+                    ContentVersion::create([
+                        'version_id' => $latestVersion->id,
+                        'content_id' => $commentContent->id,
+                        'value' => $validated['comments'] ?? 'Sin comentarios',
+                    ]);
                 }
-
-                // Crear nueva relación en content_version
-                ContentVersion::create([
-                    'version_id' => $latestVersion->id,
-                    'content_id' => $commentContent->id,
-                    'value' => $request->comments ?: 'Sin comentarios',
-                ]);
             }
-
-            // Actualizar estado del proyecto
-            $project->update(['project_status_id' => $newStatusId]);
-
-            DB::commit();
-
-            return redirect()->back()->with('success', 'Evaluación registrada correctamente.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
+
+        return redirect()
+            ->route('projects.evaluation.index')
+            ->with('success', "Evaluación del proyecto '{$project->title}' enviada correctamente.");
     }
+
 }
