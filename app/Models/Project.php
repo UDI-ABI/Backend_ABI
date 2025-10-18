@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
@@ -42,22 +41,6 @@ class Project extends Model
     ];
 
     /**
-     * Resolve the model class used for the students relationship.
-     */
-    protected function getStudentModelClass(): string
-    {
-        return Student::class;
-    }
-
-    /**
-     * Resolve the model class used for the professors relationship.
-     */
-    protected function getProfessorModelClass(): string
-    {
-        return Professor::class;
-    }
-
-    /**
      * Set the title attribute with proper formatting.
      *
      * Formats the title by removing extra whitespace and applying title case.
@@ -76,9 +59,9 @@ class Project extends Model
     /**
      * Get the status associated with the project.
      */
-    public function status(): BelongsTo
+    public function projectStatus()
     {
-        return $this->belongsTo(ProjectStatus::class, 'project_status_id');
+        return $this->belongsTo(ProjectStatus::class, 'project_status_id', 'id');
     }
 
     /**
@@ -97,29 +80,19 @@ class Project extends Model
         return $this->hasMany(Version::class, 'project_id', 'id');
     }
 
-    /**
-     * Professors assigned to the project.
-     */
-    public function professors(): BelongsToMany
+    public function professors()
     {
-        return $this->belongsToMany(
-            $this->getProfessorModelClass(),
-            'professor_project',
-            'project_id',
-            'professor_id'
-        )->withTimestamps();
+        return $this->belongsToMany(Professor::class, 'professor_project', 'project_id', 'professor_id');
     }
 
-    /**
-     * Students linked to the project.
-     */
-    public function students(): BelongsToMany
+    public function students()
     {
-        return $this->belongsToMany(
-            $this->getStudentModelClass(),
-            'student_project',
-            'project_id',
-            'student_id'
-        )->withTimestamps();
+        return $this->belongsToMany(Student::class, 'student_project', 'project_id', 'student_id');
+    }
+
+    public function contentFrameworkProjects()
+    {
+        return $this->hasMany(ContentFrameworkProject::class, 'project_id', 'id');
     }
 }
+
