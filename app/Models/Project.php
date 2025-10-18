@@ -95,3 +95,4 @@ class Project extends Model
         return $this->hasMany(ContentFrameworkProject::class, 'project_id', 'id');
     }
 }
+
