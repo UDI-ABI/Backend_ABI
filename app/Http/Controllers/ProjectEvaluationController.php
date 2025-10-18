@@ -13,24 +13,24 @@ use Illuminate\Support\Facades\Auth;
 class ProjectEvaluationController extends Controller
 {
     /**
-     * Muestra los proyectos pendientes para el líder de comité autenticado.
+     * Displays pending projects for the authenticated committee leader.
      */
     public function index()
     {
-        // 1️⃣ Obtener el registro del profesor asociado al usuario autenticado (líder de comité)
+        // Obtain the record of the professor associated with the authenticated user (committee leader)
         $professor = Professor::where('user_id', Auth::id())
             ->where('committee_leader', true)
-            ->whereNull('deleted_at') // evitar profesores soft-deleted
+            ->whereNull('deleted_at') // avoid soft-deleted teachers
             ->first();
 
-        // 2️⃣ Validar que tenga city_program_id
+        // Validate that it has city_program_id
         if (!$professor || !$professor->city_program_id) {
             abort(403, 'No se pudo determinar el programa del líder de comité.');
         }
 
         $cityProgramId = $professor->city_program_id;
 
-        // 3️⃣ Filtrar proyectos según city_program del profesor líder
+        // Filter projects by city_program of the lead professor
         $projects = Project::whereHas('projectStatus', function ($query) {
                 $query->where('name', 'Pendiente de aprobación');
             })
@@ -69,7 +69,7 @@ class ProjectEvaluationController extends Controller
             'professors',
         ]);
 
-        // Última versión del proyecto
+        // Latest version of the project
         $latestVersion = $project->versions()->latest('created_at')->first();
 
         return view('projects.evaluation.show', compact('project', 'latestVersion'));
@@ -84,22 +84,22 @@ class ProjectEvaluationController extends Controller
 
         $statusName = $validated['status'];
 
-        // Buscar estado correspondiente
+        // Search corresponding status
         $status = ProjectStatus::where('name', $statusName)->first();
         if (!$status) {
             return back()->with('error', 'No se encontró el estado seleccionado.');
         }
 
-        // Actualizar estado del proyecto
+        // Update project status
         $project->update(['project_status_id' => $status->id]);
 
-        // Si se devolvió para corrección, crear ContentVersion
+        // If returned for correction, create ContentVersion
         if ($statusName === 'Devuelto para corrección') {
             $latestVersion = $project->versions()->latest('created_at')->first();
 
             if ($latestVersion) {
                 $commentContent = Content::where('name', 'Comentarios')
-                    ->where('role', 'committee_leader')
+                    ->whereJsonContains('roles', 'committee_leader')
                     ->first();
 
                 if ($commentContent) {
