@@ -158,6 +158,12 @@ return [
     ],
 
     [
+        'text' => 'Proyectos',
+        'icon' => 'ti ti-book',
+        'route' => 'projects.index',
+    ],
+
+    [
         'header' => 'Gestion Academica',
     ],
     [
@@ -207,7 +213,7 @@ return [
             ],
             [
                 'text' => 'Asignacion de contenidos',
-                'icon' => 'ti ti-project',
+                'icon' => 'ti ti-circle-dashed',
                 'route' => 'content-framework-projects.index',
             ],
         ],
