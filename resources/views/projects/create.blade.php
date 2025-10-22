@@ -59,44 +59,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-12 col-lg-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Recomendaciones</h3>
-                        </div>
-                        <div class="card-body">
-                            <ul class="list-unstyled mb-0">
-                                <li class="d-flex align-items-start gap-2 mb-3">
-                                    <span class="avatar bg-azure-lt text-primary">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                            <path d="M5 12h14" />
-                                            <path d="M12 5l7 7-7 7" />
-                                        </svg>
-                                    </span>
-                                    <div>
-                                        <strong>Asigna responsables</strong>
-                                        <p class="text-secondary mb-0">Selecciona al menos un docente para facilitar el seguimiento del proyecto.</p>
-                                    </div>
-                                </li>
-                                <li class="d-flex align-items-start gap-2">
-                                    <span class="avatar bg-azure-lt text-primary">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                            <path d="M9 12h6" />
-                                            <path d="M12 9l3 3-3 3" />
-                                            <path d="M5 12a7 7 0 1 1 14 0a7 7 0 1 1 -14 0" />
-                                        </svg>
-                                    </span>
-                                    <div>
-                                        <strong>Sin recargas</strong>
-                                        <p class="text-secondary mb-0">El formulario se comunica con la API para enviar la información sin abandonar la página.</p>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
+                
             </div>
         </div>
     </div>
