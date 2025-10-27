@@ -34,14 +34,14 @@
                 </div>
                 <div class="col-auto ms-auto d-print-none">
                     <div class="btn-list">
-                        <button class="btn btn-primary" id="btn-new-project" type="button" data-bs-toggle="modal" data-bs-target="#project-modal">
+                        <a href="{{ route('projects.create') }}" class="btn btn-primary" id="btn-new-project">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                 <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                                 <line x1="12" y1="5" x2="12" y2="19" />
                                 <line x1="5" y1="12" x2="19" y2="12" />
                             </svg>
                             Nuevo proyecto
-                        </button>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -130,16 +130,16 @@
                     </div>
                 </div>
                 <div class="table-responsive">
-                    <table class="table card-table table-vcenter text-nowrap">
+                    <table class="table card-table table-vcenter align-middle" id="project-table">
                         <thead>
                             <tr>
                                 <th class="w-1">ID</th>
-                                <th>Título</th>
-                                <th>Área temática</th>
-                                <th>Estado</th>
-                                <th>Profesores</th>
-                                <th>Estudiantes</th>
-                                <th class="w-1">Actualizado</th>
+                                <th class="text-truncate" style="max-width: 260px;">Título</th>
+                                <th class="text-truncate" style="max-width: 200px;">Área temática</th>
+                                <th class="text-truncate" style="max-width: 160px;">Estado</th>
+                                <th class="text-truncate" style="max-width: 220px;">Profesores</th>
+                                <th class="text-truncate" style="max-width: 220px;">Estudiantes</th>
+                                <th class="text-truncate" style="max-width: 140px;">Actualizado</th>
                                 <th class="w-1">Acciones</th>
                             </tr>
                         </thead>
@@ -160,58 +160,28 @@
         </div>
     </div>
 
-    <div class="modal modal-blur fade" id="project-modal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-xl" role="document">
+    {{-- Modal replaces the native confirmation dialog when deleting a project. --}}
+    <div class="modal fade" id="project-delete-modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="project-modal-title">Nuevo proyecto</h5>
+                    <h5 class="modal-title">Eliminar proyecto</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
-                <form id="project-form" autocomplete="off">
-                    <div class="modal-body">
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <label class="form-label required" for="project-title">Título</label>
-                                <input type="text" class="form-control" id="project-title" maxlength="255" required>
-                                <small class="form-hint">El título se normalizará automáticamente según las reglas institucionales.</small>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <label class="form-label required" for="project-thematic-area-form">Área temática</label>
-                                <select id="project-thematic-area-form" class="form-select" required>
-                                    <option value="">Selecciona un área temática</option>
-                                </select>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <label class="form-label required" for="project-status-form">Estado</label>
-                                <select id="project-status-form" class="form-select" required>
-                                    <option value="">Selecciona un estado</option>
-                                </select>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label" for="project-evaluation">Criterios de evaluación</label>
-                                <textarea id="project-evaluation" class="form-control" rows="3" placeholder="Requisitos o rúbricas que deben cumplir los postulantes."></textarea>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <label class="form-label" for="project-professors">Profesores asignados</label>
-                                <select id="project-professors" class="form-select" multiple size="6"></select>
-                                <small class="form-hint">Mantén presionada la tecla Ctrl (o Cmd en Mac) para seleccionar múltiples docentes.</small>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <label class="form-label" for="project-students">Estudiantes participantes</label>
-                                <select id="project-students" class="form-select" multiple size="6"></select>
-                                <small class="form-hint">Solo se listan estudiantes activos asociados al programa correspondiente.</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-ghost-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary" id="project-submit">Guardar proyecto</button>
-                    </div>
-                </form>
+                <div class="modal-body">
+                    <p class="mb-0">¿Deseas eliminar <span class="fw-semibold" id="project-delete-name">este proyecto</span>? Esta acción es reversible.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="project-delete-confirm">Eliminar</button>
+                </div>
             </div>
         </div>
     </div>
+
 @endsection
+
+
 
 @push('js')
     <script>
@@ -219,9 +189,25 @@
             const apiBase = '{{ url('/api/projects') }}';
             const metaUrl = '{{ url('/api/projects/meta') }}';
             const restoreBase = '{{ url('/api/projects') }}';
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+            // Base templates used to link rows to the standalone detail and edit screens.
+            const editUrlTemplate = '{{ url('projects') }}/:id/edit';
+            const showUrlTemplate = '{{ url('projects') }}/:id';
 
-            const filtersForm = document.getElementById('project-filters');
+            const deleteModalElement = document.getElementById('project-delete-modal');
+            const deleteModal = deleteModalElement && window.bootstrap ? new window.bootstrap.Modal(deleteModalElement) : null;
+            const deleteNameLabel = document.getElementById('project-delete-name');
+            const deleteConfirmButton = document.getElementById('project-delete-confirm');
+
+            let pendingDeleteId = null;
+            let pendingDeleteTitle = 'este proyecto';
+
+            const icons = {
+                view: '<svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M22 12c-2.667 4.667-6 7-10 7s-7.333-2.333-10-7c2.667-4.667 6-7 10-7s7.333 2.333 10 7"/></svg>',
+                edit: '<svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"/><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"/><path d="M16 5l3 3"/></svg>',
+                delete: '<svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"/><path d="M9 7v-3h6v3"/></svg>',
+                restore: '<svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7h-3v3"/><path d="M5 7l5 -5l5 5"/><path d="M5 10v6a2 2 0 0 0 2 2h10"/></svg>',
+            };
+
             const searchInput = document.getElementById('project-search');
             const thematicAreaFilter = document.getElementById('project-thematic-area');
             const statusFilter = document.getElementById('project-status');
@@ -235,18 +221,6 @@
             const summary = document.getElementById('project-summary');
             const alertBox = document.getElementById('project-alert');
 
-            const modalElement = document.getElementById('project-modal');
-            const modalTitle = document.getElementById('project-modal-title');
-            const form = document.getElementById('project-form');
-            const submitBtn = document.getElementById('project-submit');
-            const titleInput = document.getElementById('project-title');
-            const thematicAreaForm = document.getElementById('project-thematic-area-form');
-            const statusForm = document.getElementById('project-status-form');
-            const evaluationField = document.getElementById('project-evaluation');
-            const professorsForm = document.getElementById('project-professors');
-            const studentsForm = document.getElementById('project-students');
-            const modalInstance = window.bootstrap ? window.bootstrap.Modal.getOrCreateInstance(modalElement) : null;
-
             const state = {
                 page: 1,
                 perPage: parseInt(perPageSelect.value, 10) || 10,
@@ -256,7 +230,6 @@
                 professorId: '',
                 studentId: '',
                 recordFilter: 'active',
-                currentId: null,
             };
 
             const metaState = {
@@ -338,10 +311,12 @@
                 if (!Array.isArray(items) || !items.length) {
                     return `<span class="text-secondary">${emptyLabel}</span>`;
                 }
-                return items.map(person => {
+                const badges = items.map(person => {
                     const fullName = [person.name, person.last_name].filter(Boolean).join(' ').trim() || person.card_id || 'Sin nombre';
-                    return `<span class="badge bg-blue-lt me-1 mb-1">${escapeHtml(fullName)}</span>`;
+                    const safeName = escapeHtml(fullName);
+                    return `<span class="badge bg-blue-lt text-truncate">${safeName}</span>`;
                 }).join('');
+                return `<div class="d-flex flex-wrap gap-1 project-badges">${badges}</div>`;
             }
 
             function resolveCatalogName(relation) {
@@ -354,6 +329,24 @@
                     ?? relation.title
                     ?? relation.titulo
                     ?? '—';
+            }
+
+            function buildActionButtons(itemId, deleted, title) {
+                const showUrl = showUrlTemplate.replace(':id', itemId);
+                if (deleted) {
+                    return `
+                        <a href="${showUrl}" class="btn btn-sm btn-outline-secondary" data-action="show" data-id="${itemId}" title="Ver">${icons.view}</a>
+                        <button class="btn btn-sm btn-outline-success" data-action="restore" data-id="${itemId}" title="Restaurar">${icons.restore}</button>
+                    `;
+                }
+
+                const editUrl = editUrlTemplate.replace(':id', itemId);
+                const safeTitle = escapeHtml(title ?? 'este proyecto');
+                return `
+                    <a href="${showUrl}" class="btn btn-sm btn-outline-primary" data-action="show" data-id="${itemId}" title="Ver">${icons.view}</a>
+                    <a href="${editUrl}" class="btn btn-sm btn-outline-success" data-action="edit" data-id="${itemId}" title="Editar">${icons.edit}</a>
+                    <button class="btn btn-sm btn-outline-danger" data-action="delete" data-id="${itemId}" data-title="${safeTitle}" title="Eliminar">${icons.delete}</button>
+                `;
             }
 
             function renderTable(data) {
@@ -375,33 +368,29 @@
                     const professors = renderParticipants(item.professors || [], 'Sin docentes');
                     const students = renderParticipants(item.students || [], 'Sin estudiantes');
                     const deleted = Boolean(item.deleted_at);
-                    const title = escapeHtml(item.title ?? 'Proyecto sin título');
+                    const rawTitle = item.title ?? 'Proyecto sin título';
+                    const title = escapeHtml(rawTitle);
                     const rowClass = deleted ? ' class="table-danger"' : '';
-                    const badge = deleted ? '<span class="badge bg-red-lt ms-2">Eliminado</span>' : '';
-
-                    let actions = `
-                        <button class="btn btn-outline-primary btn-sm" data-action="edit" data-id="${item.id}">Editar</button>
-                        <button class="btn btn-outline-danger btn-sm" data-action="delete" data-id="${item.id}">Eliminar</button>
-                    `;
-
-                    if (deleted) {
-                        actions = `
-                            <button class="btn btn-outline-success btn-sm" data-action="restore" data-id="${item.id}">Restaurar</button>
-                        `;
-                    }
+                    const badge = deleted ? '<span class="badge bg-red-lt ms-2 align-middle">Eliminado</span>' : '';
+                    const areaHtml = `<span class="d-inline-block text-truncate" style="max-width: 200px;" title="${escapeHtml(thematicArea)}">${escapeHtml(thematicArea)}</span>`;
+                    const statusHtml = `<span class="d-inline-block text-truncate" style="max-width: 160px;" title="${escapeHtml(displayStatus)}">${escapeHtml(displayStatus)}</span>`;
+                    const updatedHtml = `<span class="d-inline-block text-truncate" style="max-width: 140px;" title="${escapeHtml(updated)}">${escapeHtml(updated)}</span>`;
 
                     return `
                         <tr${rowClass} data-id="${item.id}">
                             <td class="text-secondary">#${item.id}</td>
-                            <td class="fw-semibold">${title}${badge}</td>
-                            <td>${escapeHtml(thematicArea)}</td>
-                            <td>${escapeHtml(displayStatus)}</td>
-                            <td>${professors}</td>
-                            <td>${students}</td>
-                            <td>${updated}</td>
+                            <td class="project-title-cell">
+                                <span class="fw-semibold d-inline-block text-truncate" style="max-width: 240px;" title="${title}">${title}</span>
+                                ${badge}
+                            </td>
+                            <td class="project-area-cell">${areaHtml}</td>
+                            <td class="project-status-cell">${statusHtml}</td>
+                            <td class="project-professors-cell">${professors}</td>
+                            <td class="project-students-cell">${students}</td>
+                            <td class="project-updated-cell text-secondary">${updatedHtml}</td>
                             <td>
                                 <div class="btn-list flex-nowrap">
-                                    ${actions}
+                                    ${buildActionButtons(item.id, deleted, rawTitle)}
                                 </div>
                             </td>
                         </tr>
@@ -471,11 +460,6 @@
                     populateFilterSelect(statusFilter, metaState.statuses, 'Todos los estados');
                     populateFilterSelect(professorFilter, metaState.professors, 'Todos los profesores', professor => `${professor.name} · ${professor.card_id}`);
                     populateFilterSelect(studentFilter, metaState.students, 'Todos los estudiantes', student => `${student.name} · ${student.card_id}`);
-
-                    populateFormSelect(thematicAreaForm, metaState.thematicAreas, 'Selecciona un área temática');
-                    populateFormSelect(statusForm, metaState.statuses, 'Selecciona un estado');
-                    populateFormSelect(professorsForm, metaState.professors, null, professor => `${professor.name} · ${professor.card_id}`);
-                    populateFormSelect(studentsForm, metaState.students, null, student => `${student.name} · ${student.card_id}`);
                 } catch (error) {
                     setAlert(error.message || 'No fue posible cargar los catálogos para proyectos.');
                 }
@@ -502,81 +486,17 @@
                 select.value = previous;
             }
 
-            function populateFormSelect(select, items, placeholder, formatter) {
-                if (!select) {
-                    return;
-                }
-                const selectedValues = Array.from(select.selectedOptions || []).map(option => option.value);
-                select.innerHTML = '';
-
-                if (placeholder !== null) {
-                    const defaultOption = document.createElement('option');
-                    defaultOption.value = '';
-                    defaultOption.textContent = placeholder;
-                    select.appendChild(defaultOption);
-                }
-
-                items.forEach(item => {
-                    const option = document.createElement('option');
-                    option.value = item.id;
-                    option.textContent = typeof formatter === 'function' ? formatter(item) : item.name;
-                    if (selectedValues.includes(String(item.id))) {
-                        option.selected = true;
-                    }
-                    select.appendChild(option);
-                });
-            }
-
-            async function getProject(id) {
-                const response = await fetch(`${apiBase}/${id}`, { headers: { 'Accept': 'application/json' } });
-                if (!response.ok) {
-                    throw new Error('No fue posible obtener la información del proyecto.');
-                }
-                return response.json();
-            }
-
-            async function submitProject(method, url, payload) {
-                const response = await fetch(url, {
-                    method,
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                    },
-                    body: JSON.stringify(payload),
-                });
-
-                if (response.status === 422) {
-                    const data = await response.json();
-                    const firstError = Object.values(data.errors || {})[0]?.[0] ?? 'Revisa la información ingresada.';
-                    throw new Error(firstError);
-                }
-
-                if (!response.ok) {
-                    const data = await response.json().catch(() => ({}));
-                    throw new Error(data.message || 'No fue posible guardar la información.');
-                }
-
-                return response.json().catch(() => ({}));
-            }
-
             async function deleteProject(id) {
                 const response = await fetch(`${apiBase}/${id}`, {
                     method: 'DELETE',
                     headers: {
                         'Accept': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
                     },
                 });
 
-                if (response.status === 409) {
-                    const data = await response.json();
-                    throw new Error(data.message || 'El proyecto no puede eliminarse.');
-                }
-
-                if (!response.ok && response.status !== 204) {
-                    const data = await response.json().catch(() => ({}));
-                    throw new Error(data.message || 'No fue posible eliminar el proyecto.');
+                if (!response.ok) {
+                    const body = await response.json().catch(() => ({}));
+                    throw new Error(body?.message ?? 'No fue posible eliminar el proyecto.');
                 }
             }
 
@@ -585,64 +505,23 @@
                     method: 'POST',
                     headers: {
                         'Accept': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '',
                     },
                 });
 
                 if (!response.ok) {
-                    const data = await response.json().catch(() => ({}));
-                    throw new Error(data.message || 'No fue posible restaurar el proyecto.');
+                    const body = await response.json().catch(() => ({}));
+                    throw new Error(body?.message ?? 'No fue posible restaurar el proyecto.');
                 }
             }
 
-            function collectSelectedValues(select) {
-                return Array.from(select.selectedOptions || [])
-                    .map(option => parseInt(option.value, 10))
-                    .filter(id => !Number.isNaN(id));
-            }
-
-            function fillForm(project) {
-                titleInput.value = project.title ?? '';
-                thematicAreaForm.value = project.thematic_area_id ?? '';
-                statusForm.value = project.project_status_id ?? '';
-                evaluationField.value = project.evaluation_criteria ?? '';
-
-                const professorIds = (project.professors || []).map(professor => professor.id);
-                const studentIds = (project.students || []).map(student => student.id);
-
-                Array.from(professorsForm.options).forEach(option => {
-                    option.selected = professorIds.includes(parseInt(option.value, 10));
-                });
-                Array.from(studentsForm.options).forEach(option => {
-                    option.selected = studentIds.includes(parseInt(option.value, 10));
-                });
-            }
-
-            filtersForm.addEventListener('submit', event => event.preventDefault());
-
-            filtersForm.addEventListener('reset', () => {
-                setTimeout(() => {
-                    state.search = '';
-                    state.thematicAreaId = '';
-                    state.projectStatusId = '';
-                    state.professorId = '';
-                    state.studentId = '';
-                    state.recordFilter = 'active';
-                    state.page = 1;
-                    perPageSelect.value = '10';
-                    recordFilter.value = 'active';
-                    state.perPage = 10;
-                    fetchProjects(buildQuery());
-                }, 0);
-            });
-
             pagination.addEventListener('click', event => {
-                const target = event.target.closest('a[data-url]');
-                if (!target) {
+                const link = event.target.closest('a.page-link');
+                if (!link) {
                     return;
                 }
                 event.preventDefault();
-                const url = target.getAttribute('data-url');
+                const url = link.getAttribute('data-url');
                 if (!url) {
                     return;
                 }
@@ -664,19 +543,22 @@
                 }
 
                 try {
-                    if (button.dataset.action === 'edit') {
-                        const project = await getProject(id);
-                        state.currentId = project.id;
-                        modalTitle.textContent = 'Editar proyecto';
-                        submitBtn.textContent = 'Actualizar proyecto';
-                        fillForm(project);
-                        modalInstance?.show();
-                    } else if (button.dataset.action === 'delete') {
-                        if (confirm('¿Deseas eliminar este proyecto? Esta acción es reversible.')) {
-                            await deleteProject(id);
-                            setAlert('Proyecto eliminado correctamente.', 'success');
-                            fetchProjects(buildQuery(state.page));
+                    if (button.dataset.action === 'delete') {
+                        pendingDeleteId = id;
+                        pendingDeleteTitle = button.getAttribute('data-title') || 'este proyecto';
+                        if (deleteNameLabel) {
+                            deleteNameLabel.textContent = pendingDeleteTitle;
                         }
+                        if (deleteModal) {
+                            deleteConfirmButton?.removeAttribute('disabled');
+                            deleteModal.show();
+                            return;
+                        }
+
+                        await deleteProject(id);
+                        setAlert('Proyecto eliminado correctamente.', 'success');
+                        fetchProjects(buildQuery(state.page));
+                        return;
                     } else if (button.dataset.action === 'restore') {
                         await restoreProject(id);
                         setAlert('Proyecto restaurado correctamente.', 'success');
@@ -685,6 +567,30 @@
                 } catch (error) {
                     setAlert(error.message || 'Ocurrió un error al procesar la acción.');
                 }
+            });
+
+            deleteConfirmButton?.addEventListener('click', async () => {
+                if (!pendingDeleteId) {
+                    deleteModal?.hide();
+                    return;
+                }
+
+                deleteConfirmButton.disabled = true;
+                try {
+                    await deleteProject(pendingDeleteId);
+                    setAlert('Proyecto eliminado correctamente.', 'success');
+                    deleteModal?.hide();
+                    fetchProjects(buildQuery(state.page));
+                } catch (error) {
+                    setAlert(error.message || 'Ocurrió un error al procesar la acción.');
+                } finally {
+                    deleteConfirmButton.disabled = false;
+                    pendingDeleteId = null;
+                }
+            });
+
+            deleteModalElement?.addEventListener('hidden.bs.modal', () => {
+                pendingDeleteId = null;
             });
 
             searchInput.addEventListener('input', debounce(event => {
@@ -729,54 +635,6 @@
                 fetchProjects(buildQuery());
             });
 
-            document.getElementById('btn-new-project').addEventListener('click', () => {
-                state.currentId = null;
-                modalTitle.textContent = 'Nuevo proyecto';
-                submitBtn.textContent = 'Guardar proyecto';
-                form.reset();
-                Array.from(professorsForm.options).forEach(option => option.selected = false);
-                Array.from(studentsForm.options).forEach(option => option.selected = false);
-            });
-
-            form.addEventListener('submit', async event => {
-                event.preventDefault();
-
-                try {
-                    submitBtn.disabled = true;
-                    submitBtn.textContent = state.currentId ? 'Actualizando...' : 'Guardando...';
-
-                    const payload = {
-                        title: titleInput.value.trim(),
-                        thematic_area_id: parseInt(thematicAreaForm.value, 10) || null,
-                        project_status_id: parseInt(statusForm.value, 10) || null,
-                        evaluation_criteria: evaluationField.value.trim() || null,
-                        professor_ids: collectSelectedValues(professorsForm),
-                        student_ids: collectSelectedValues(studentsForm),
-                    };
-
-                    if (!payload.thematic_area_id || !payload.project_status_id) {
-                        throw new Error('Debes seleccionar un área temática y un estado.');
-                    }
-
-                    let method = 'POST';
-                    let url = apiBase;
-                    if (state.currentId) {
-                        method = 'PUT';
-                        url = `${apiBase}/${state.currentId}`;
-                    }
-
-                    await submitProject(method, url, payload);
-                    modalInstance?.hide();
-                    setAlert(state.currentId ? 'Proyecto actualizado correctamente.' : 'Proyecto creado con éxito.', 'success');
-                    fetchProjects(buildQuery(state.page));
-                } catch (error) {
-                    setAlert(error.message || 'No fue posible guardar la información.');
-                } finally {
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = state.currentId ? 'Actualizar proyecto' : 'Guardar proyecto';
-                }
-            });
-
             (async () => {
                 await fetchMeta();
                 await fetchProjects(buildQuery());
@@ -785,6 +643,7 @@
     </script>
 @endpush
 
+
 @push('css')
     <style>
         .form-label.required::after {
@@ -792,9 +651,35 @@
             color: var(--tblr-danger);
         }
 
-        #project-professors,
-        #project-students {
-            min-height: 12rem;
+        #project-table td.project-title-cell,
+        #project-table td.project-area-cell,
+        #project-table td.project-status-cell,
+        #project-table td.project-professors-cell,
+        #project-table td.project-students-cell,
+        #project-table td.project-updated-cell {
+            max-width: 260px;
+            vertical-align: middle;
+        }
+
+        #project-table td.project-title-cell .fw-semibold,
+        #project-table td.project-area-cell span,
+        #project-table td.project-status-cell span,
+        #project-table td.project-updated-cell span {
+            display: inline-block;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        #project-table .project-badges {
+            max-width: 220px;
+        }
+
+        #project-table .project-badges .badge {
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
     </style>
 @endpush
