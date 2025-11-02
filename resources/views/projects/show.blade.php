@@ -28,9 +28,16 @@
                     </h2>
                     <p class="text-muted mb-0">Consulta la versión más reciente de la propuesta y sus participantes asociados.</p>
                 </div>
+                @php
+                    // Determine whether the project is awaiting approval to hide the edit button consistently with server-side guards.
+                    $statusName = $project->projectStatus->name ?? 'Sin estado';
+                    $isPendingApproval = \Illuminate\Support\Str::lower($statusName) === 'pendiente de aprobación';
+                @endphp
                 <div class="col-auto ms-auto d-print-none">
                     <a href="{{ route('projects.index') }}" class="btn btn-outline-secondary">Volver al listado</a>
-                    <a href="{{ route('projects.edit', $project) }}" class="btn btn-primary">Editar</a>
+                    @if (! $isPendingApproval)
+                        <a href="{{ route('projects.edit', $project) }}" class="btn btn-primary">Editar</a>
+                    @endif
                 </div>
             </div>
         </div>
@@ -53,7 +60,18 @@
                                 <h3 class="card-title mb-0">{{ $project->title }}</h3>
                                 <small class="text-secondary">Registrado el {{ optional($project->created_at)->format('d/m/Y H:i') }}</small>
                             </div>
-                            <span class="badge bg-indigo">{{ $project->projectStatus->name ?? 'Sin estado' }}</span>
+                            @php
+                                // Reuse the badge mapping to keep the status consistent with the listing view.
+                                $normalizedStatus = \Illuminate\Support\Str::lower($statusName);
+                                $statusClasses = [
+                                    'pendiente de aprobación' => 'bg-warning text-dark',
+                                    'devuelto para corrección' => 'bg-danger text-white',
+                                    'aprobado' => 'bg-success text-white',
+                                    'waiting evaluation' => 'bg-primary text-white',
+                                ];
+                                $badgeClass = $statusClasses[$normalizedStatus] ?? 'bg-secondary text-white';
+                            @endphp
+                            <span class="badge {{ $badgeClass }}">{{ $statusName }}</span>
                         </div>
                         <div class="card-body">
                             <dl class="row g-3 mb-0">

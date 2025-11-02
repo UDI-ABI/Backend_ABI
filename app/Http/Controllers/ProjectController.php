@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Models\Version;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\JsonResponse; // Added to type-hint JSON responses for the professor search endpoint.
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -84,8 +85,9 @@ class ProjectController extends Controller
         return view('projects.index', [
             'projects' => $projects,
             'search' => $search,
-            'isProfessor' => $user?->role === 'professor',
+            'isProfessor' => in_array($user?->role, ['professor', 'committee_leader'], true), // Allow committee leaders to share the professor permissions in the view layer.
             'isStudent' => $user?->role === 'student',
+            'isCommitteeLeader' => $user?->role === 'committee_leader', // Expose the role explicitly to toggle UI elements when needed.
             'isResearchStaff' => $user?->role === 'research_staff',
         ]);
     }
@@ -98,15 +100,16 @@ class ProjectController extends Controller
     protected function ensureRoleAccess(bool $allowResearchStaff = false): array
     {
         $user = AuthUserHelper::fullUser();
-        $isProfessor = $user?->role === 'professor';
+        $isProfessor = in_array($user?->role, ['professor', 'committee_leader'], true); // Treat committee leaders exactly like professors for access checks.
         $isStudent = $user?->role === 'student';
+        $isCommitteeLeader = $user?->role === 'committee_leader'; // Track the role for downstream logic that needs to know the exact profile type.
         $isResearchStaff = $user?->role === 'research_staff';
 
         if (! $isProfessor && ! $isStudent && ! ($allowResearchStaff && $isResearchStaff)) {
-            abort(403, 'This action is only available for professors or students.');
+            abort(403, 'This action is only available for professors, committee leaders or students.'); // Updated message to mention the new allowed role.
         }
 
-        return [$user, $isProfessor, $isStudent, $isResearchStaff];
+        return [$user, $isProfessor, $isStudent, $isResearchStaff, $isCommitteeLeader]; // Include the explicit role flag so callers can adapt the UI.
     }
 
     /**
@@ -114,7 +117,7 @@ class ProjectController extends Controller
      */
     public function create(): View
     {
-        [$user, $isProfessor, $isStudent, $isResearchStaff] = $this->ensureRoleAccess(true);
+        [$user, $isProfessor, $isStudent, $isResearchStaff, $isCommitteeLeader] = $this->ensureRoleAccess(true); // Capture the committee leader flag to mirror professor permissions later.
 
         if ($isResearchStaff) {
             abort(403, 'Research staff members cannot create project ideas.');
@@ -163,11 +166,7 @@ class ProjectController extends Controller
                 'program_id' => optional($professor->cityProgram)->program_id,
             ]);
 
-            $availableProfessors = Professor::query()
-                ->where('id', '!=', $professor->id)
-                ->orderBy('last_name')
-                ->orderBy('name')
-                ->get();
+            $availableProfessors = collect(); // The dynamic search endpoint now provides professor options on demand.
         } else {
             $student = $user->student;
             if (! $student) {
@@ -207,6 +206,7 @@ class ProjectController extends Controller
             'prefill' => $prefill,
             'isProfessor' => $isProfessor,
             'isStudent' => $isStudent,
+            'isCommitteeLeader' => $isCommitteeLeader, // Expose the new role so the Blade template can adjust the UI consistently.
             'availableStudents' => $availableStudents,
             'availableProfessors' => $availableProfessors,
         ]);
@@ -218,7 +218,7 @@ class ProjectController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        [$user, $isProfessor, $isStudent, $isResearchStaff] = $this->ensureRoleAccess(true);
+        [$user, $isProfessor, $isStudent, $isResearchStaff] = $this->ensureRoleAccess(true); // The committee leader flag is not required here because store() delegates immediately.
 
         try {
             if ($isProfessor) {
@@ -281,9 +281,74 @@ class ProjectController extends Controller
             'latestVersion' => $latestVersion,
             'contentValues' => $contentValues,
             'frameworksSelected' => $project->contentFrameworks,
-            'isProfessor' => $user?->role === 'professor',
+            'isProfessor' => in_array($user?->role, ['professor', 'committee_leader'], true), // Allow committee leaders to reuse the professor-specific UI controls.
             'isStudent' => $user?->role === 'student',
+            'isCommitteeLeader' => $user?->role === 'committee_leader', // Expose the role explicitly so the Blade can toggle actions if needed.
         ]);
+    }
+
+    /**
+     * Provide an AJAX friendly list of professors to associate with a project.
+     */
+    public function searchProfessors(Request $request): JsonResponse
+    {
+        [$user, $isProfessor] = array_slice($this->ensureRoleAccess(), 0, 2); // Reuse the shared guard to ensure only professors or committee leaders reach this endpoint.
+
+        if (! $isProfessor) {
+            abort(403, 'Only professors can search for colleagues.'); // Harden the endpoint against unauthorized roles.
+        }
+
+        $currentProfessorId = $user?->professor?->id; // Capture the authenticated professor record to avoid suggesting themselves.
+
+        $requestedIds = collect($request->input('ids', []))
+            ->filter(static fn ($id) => is_numeric($id))
+            ->map(static fn ($id) => (int) $id)
+            ->values();
+
+        $query = Professor::query()
+            ->select(['id', 'name', 'last_name', 'card_id'])
+            ->when($currentProfessorId, static fn ($builder) => $builder->where('id', '!=', $currentProfessorId)); // Exclude the requester to prevent duplicate assignments.
+
+        if ($requestedIds->isNotEmpty()) {
+            $professors = $query
+                ->whereIn('id', $requestedIds)
+                ->orderBy('last_name')
+                ->orderBy('name')
+                ->get();
+
+            return response()->json($professors->map(static function (Professor $professor) {
+                return [
+                    'id' => $professor->id,
+                    'name' => trim($professor->name . ' ' . $professor->last_name),
+                    'document' => $professor->card_id,
+                ];
+            }));
+        }
+
+        $term = trim((string) $request->input('q', ''));
+
+        if ($term === '') {
+            return response()->json([]); // Avoid running unnecessary queries when the user has not entered a search term.
+        }
+
+        $professors = $query
+            ->where(static function ($builder) use ($term) {
+                $builder->where('name', 'like', "%{$term}%")
+                    ->orWhere('last_name', 'like', "%{$term}%")
+                    ->orWhere('card_id', 'like', "%{$term}%");
+            })
+            ->orderBy('last_name')
+            ->orderBy('name')
+            ->limit(10)
+            ->get();
+
+        return response()->json($professors->map(static function (Professor $professor) {
+            return [
+                'id' => $professor->id,
+                'name' => trim($professor->name . ' ' . $professor->last_name),
+                'document' => $professor->card_id,
+            ];
+        }));
     }
 
 
@@ -293,11 +358,17 @@ class ProjectController extends Controller
     public function edit(Project $project): View
     {
 
-        if($project->projectStatus?->name !== 'Devuelto para corrección') {
+        $statusName = Str::lower($project->projectStatus->name ?? ''); // Normalize the status name to apply guards consistently.
+
+        if ($statusName === 'pendiente de aprobación') {
+            abort(403, 'Projects pending approval cannot be edited.'); // Block editing attempts when the project is waiting for approval.
+        }
+
+        if ($project->projectStatus?->name !== 'Devuelto para corrección') {
             abort(403, 'Solo los proyectos devueltos para corrección pueden ser editados.');
         }
 
-        [$user, $isProfessor, $isStudent, $isResearchStaff] = $this->ensureRoleAccess(true);
+        [$user, $isProfessor, $isStudent, $isResearchStaff, $isCommitteeLeader] = $this->ensureRoleAccess(true); // Include committee leaders in the edit flow to mirror professor capabilities.
         $this->authorizeProjectAccess($project, $user->id, $isProfessor, $isStudent, $isResearchStaff);
 
         if ($isProfessor) {
@@ -366,11 +437,7 @@ class ProjectController extends Controller
                 'program_id' => optional($contextProfessor->cityProgram)->program_id,
             ]);
 
-            $availableProfessors = Professor::query()
-                ->where('id', '!=', $contextProfessor->id)
-                ->orderBy('last_name')
-                ->orderBy('name')
-                ->get();
+            $availableProfessors = collect(); // The chips interface fetches professors lazily, so we no longer need to preload them.
         } elseif ($useStudentForm) {
             $contextStudent = $isStudent ? $user->student : $project->students->first();
             if (! $contextStudent) {
@@ -426,6 +493,7 @@ class ProjectController extends Controller
             'contentValues' => $contentValues,
             'isProfessor' => $useProfessorForm,
             'isStudent' => $useStudentForm,
+            'isCommitteeLeader' => $isCommitteeLeader, // Allow the Blade to know when the editor is a committee leader for UI constraints.
             'isResearchStaff' => $isResearchStaff,
             'availableStudents' => $availableStudents,
             'availableProfessors' => $availableProfessors,
@@ -442,7 +510,13 @@ class ProjectController extends Controller
      */
     public function update(Request $request, Project $project): RedirectResponse
     {
-        if($project->projectStatus?->name !== 'Devuelto para corrección') {
+        $statusName = Str::lower($project->projectStatus->name ?? ''); // Normalize again on update to avoid duplicated string comparisons.
+
+        if ($statusName === 'pendiente de aprobación') {
+            abort(403, 'Projects pending approval cannot be edited.'); // Prevent updates when the UI should hide the edit button.
+        }
+
+        if ($project->projectStatus?->name !== 'Devuelto para corrección') {
             abort(403, 'Solo los proyectos devueltos para corrección pueden ser editados.');
         }
 
@@ -589,9 +663,17 @@ class ProjectController extends Controller
             abort(403, 'Professor profile required to complete this action.');
         }
 
+        $assignedProgramId = optional($professor->cityProgram)->program_id; // Retrieve the immutable program linked to the authenticated professor or committee leader.
+
+        if (! $assignedProgramId) {
+            abort(403, 'A program assignment is required before submitting projects.'); // Stop early when the profile is incomplete.
+        }
+
+        $request->merge(['program_id' => $assignedProgramId]); // Force the incoming request to honour the assigned program regardless of client-side manipulation.
+
         $baseRules = [
             'city_id' => ['required', 'exists:cities,id'],
-            'program_id' => ['required', 'exists:programs,id'],
+            'program_id' => ['required', 'integer', Rule::in([$assignedProgramId])], // Ensure the locked program cannot be altered on submission.
             'investigation_line_id' => ['required', 'exists:investigation_lines,id'],
             'thematic_area_id' => [
                 'required',
@@ -611,8 +693,8 @@ class ProjectController extends Controller
             'contact_last_name' => ['required', 'string', 'max:50'],
             'contact_email' => ['required', 'email', 'max:255'],
             'contact_phone' => ['required', 'string', 'max:20'],
-            'co_professor_ids' => ['nullable', 'array'],
-            'co_professor_ids.*' => ['integer', Rule::exists('professors', 'id')],
+            'associated_professors' => ['nullable', 'array'], // Capture the selected co-professors from the dynamic chips component.
+            'associated_professors.*' => ['integer', Rule::exists('professors', 'id')->whereNull('deleted_at')], // Ensure every id belongs to an active professor record.
             'content_frameworks' => ['required', 'array'],
             'content_frameworks.*' => ['required', Rule::exists('content_frameworks', 'id')],
         ];
@@ -621,7 +703,8 @@ class ProjectController extends Controller
         $isUpdate = $project !== null;
         $normalizedTitle = $this->normalizeTitle($validated['title']);
 
-        $professorIds = collect($validated['co_professor_ids'] ?? [])
+        $professorIds = collect($validated['associated_professors'] ?? [])
+            ->filter(static fn ($id) => $id !== null) // Remove empty array slots left by the client script.
             ->push($professor->id)
             ->unique()
             ->values()

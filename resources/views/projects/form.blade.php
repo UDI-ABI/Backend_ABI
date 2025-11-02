@@ -54,38 +54,66 @@
     <div class="row g-3 mt-0">
         <div class="col-12 col-md-6">
             <label for="program_id" class="form-label required">Programa académico</label>
-            <select id="program_id" name="program_id" class="form-select @error('program_id') is-invalid @enderror" required>
-                <option value="">Selecciona un programa</option>
-                @foreach ($programs as $program)
-                    <option value="{{ $program->id }}" {{ (string) old('program_id', $prefill['program_id'] ?? '') === (string) $program->id ? 'selected' : '' }}>
-                        {{ $program->name }}
-                    </option>
-                @endforeach
-            </select>
+            @php
+                // Resolve the program name using the prefilled identifier so the field can stay read-only.
+                $lockedProgramId = old('program_id', $prefill['program_id'] ?? null);
+                $lockedProgramName = optional($programs->firstWhere('id', $lockedProgramId))->name ?? 'Programa no disponible';
+            @endphp
+            <input type="text" id="program_id_display" class="form-control" value="{{ $lockedProgramName }}" readonly disabled>
+            <input type="hidden" id="program_id" name="program_id" value="{{ $lockedProgramId }}">
+            <small class="form-hint">El programa se fija según tu perfil y no puede modificarse.</small>
             @error('program_id')
-                <div class="invalid-feedback">{{ $message }}</div>
+                <div class="invalid-feedback d-block">{{ $message }}</div>
             @enderror
         </div>
         <div class="col-12 col-md-6">
-            <label for="co_professor_ids" class="form-label">Profesores asociados</label>
-            <select id="co_professor_ids" name="co_professor_ids[]" class="form-select @error('co_professor_ids') is-invalid @enderror" multiple size="6">
-                @php
-                    $fullUser = \App\Helpers\AuthUserHelper::fullUser();
-                    $currentProfessorId = optional($fullUser?->professor)->id;
-                    $selectedProfessors = collect(old('co_professor_ids', $projectModel?->professors?->pluck('id')->reject(fn ($id) => $id === $currentProfessorId)->all() ?? []));
-                @endphp
-                @foreach ($availableProfessors as $professorOption)
-                    <option value="{{ $professorOption->id }}" {{ $selectedProfessors->contains($professorOption->id) ? 'selected' : '' }}>
-                        {{ $professorOption->name }} {{ $professorOption->last_name }}
-                    </option>
-                @endforeach
-            </select>
-            <small class="form-hint">Selecciona colegas que acompañarán la propuesta.</small>
-            @error('co_professor_ids')
-                <div class="invalid-feedback">{{ $message }}</div>
+            <label class="form-label">Profesores asociados</label>
+            @php
+                // Gather the authenticated professor to exclude them from the dynamic chips component.
+                $fullUser = \App\Helpers\AuthUserHelper::fullUser();
+                $currentProfessorId = optional($fullUser?->professor)->id;
+                $initialProfessorIds = collect(old('associated_professors', $projectModel?->professors?->pluck('id')->reject(fn ($id) => $id === $currentProfessorId)->all() ?? []))
+                    ->filter(static fn ($id) => $id !== null)
+                    ->unique()
+                    ->values();
+                $initialProfessorData = $projectModel?->professors
+                    ? $projectModel->professors
+                        ->whereIn('id', $initialProfessorIds)
+                        ->map(static function ($professorItem) {
+                            return [
+                                'id' => $professorItem->id,
+                                'name' => trim($professorItem->name . ' ' . $professorItem->last_name),
+                                'document' => $professorItem->card_id,
+                            ];
+                        })
+                        ->values()
+                    : collect();
+            @endphp
+            <div class="mb-2" data-professor-search
+                 data-search-endpoint="{{ route('projects.professors.search') }}"
+                 data-initial-ids='@json($initialProfessorIds)'
+                 data-initial-professors='@json($initialProfessorData)'>
+                <div class="input-icon mb-2">
+                    <span class="input-icon-addon">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <circle cx="10" cy="10" r="7" />
+                            <line x1="21" y1="21" x2="15" y2="15" />
+                        </svg>
+                    </span>
+                    <input type="search" class="form-control" placeholder="Busca por nombre o cédula" autocomplete="off" data-professor-search-input>
+                </div>
+                <div class="list-group shadow-sm d-none" data-professor-search-results></div>
+                <div class="d-flex flex-wrap gap-2" data-professor-selected>
+                    <span class="text-secondary small" data-professor-empty-hint>Sin profesores asociados todavía.</span>
+                </div>
+            </div>
+            <small class="form-hint">Puedes añadir múltiples docentes y retirarlos con el botón × de cada ficha.</small>
+            @error('associated_professors')
+                <div class="invalid-feedback d-block">{{ $message }}</div>
             @enderror
-            @error('co_professor_ids.*')
-                <div class="invalid-feedback">{{ $message }}</div>
+            @error('associated_professors.*')
+                <div class="invalid-feedback d-block">{{ $message }}</div>
             @enderror
         </div>
     </div>
@@ -140,6 +168,217 @@
     </div>
 </div>
 
+
+@once
+    @push('js')
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                document.querySelectorAll('[data-professor-search]').forEach(container => {
+                    const endpoint = container.dataset.searchEndpoint;
+
+                    if (!endpoint) {
+                        return; // Skip initialization when the endpoint is not available in the DOM.
+                    }
+
+                    const searchInput = container.querySelector('[data-professor-search-input]');
+                    const resultsList = container.querySelector('[data-professor-search-results]');
+                    const selectedWrapper = container.querySelector('[data-professor-selected]');
+                    const emptyHint = container.querySelector('[data-professor-empty-hint]');
+                    const selectedMap = new Map(); // Track the selected professors for quick lookups.
+
+                    const toggleEmptyHint = () => {
+                        if (!emptyHint) {
+                            return;
+                        }
+
+                        emptyHint.classList.toggle('d-none', selectedMap.size > 0);
+                    };
+
+                    const removeProfessor = id => {
+                        const chip = selectedWrapper.querySelector(`[data-professor-chip="${id}"]`);
+
+                        if (chip) {
+                            chip.remove();
+                        }
+
+                        selectedMap.delete(id);
+                        toggleEmptyHint();
+                    };
+
+                    const createChip = professor => {
+                        const chip = document.createElement('span');
+                        chip.className = 'badge bg-primary text-white d-inline-flex align-items-center gap-2';
+                        chip.dataset.professorChip = professor.id;
+                        chip.innerHTML = `
+                            <span class="fw-semibold">${professor.name}</span>
+                            <span class="badge bg-white text-primary">${professor.document ?? 'Sin documento'}</span>
+                        `;
+
+                        const removeButton = document.createElement('button');
+                        removeButton.type = 'button';
+                        removeButton.className = 'btn-close btn-close-white';
+                        removeButton.setAttribute('aria-label', 'Eliminar profesor asociado');
+                        removeButton.addEventListener('click', () => removeProfessor(professor.id));
+
+                        const hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.name = 'associated_professors[]';
+                        hiddenInput.value = professor.id;
+
+                        chip.appendChild(removeButton);
+                        chip.appendChild(hiddenInput);
+
+                        return chip;
+                    };
+
+                    const addProfessor = professor => {
+                        if (!professor || selectedMap.has(professor.id)) {
+                            return; // Avoid duplicating chips in the UI or accepting incomplete data.
+                        }
+
+                        selectedMap.set(professor.id, professor);
+                        selectedWrapper.appendChild(createChip(professor));
+                        toggleEmptyHint();
+                    };
+
+                    const renderResults = professors => {
+                        if (!resultsList) {
+                            return;
+                        }
+
+                        resultsList.innerHTML = '';
+
+                        if (!Array.isArray(professors) || professors.length === 0) {
+                            resultsList.classList.add('d-none');
+                            return;
+                        }
+
+                        professors.forEach(professor => {
+                            if (selectedMap.has(professor.id)) {
+                                return; // Skip already selected professors to avoid confusing duplicates.
+                            }
+
+                            const item = document.createElement('button');
+                            item.type = 'button';
+                            item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+                            item.dataset.professorResult = professor.id;
+                            item.innerHTML = `
+                                <span>
+                                    <span class="fw-semibold d-block">${professor.name}</span>
+                                    <span class="text-secondary small">${professor.document ?? 'Sin documento'}</span>
+                                </span>
+                                <span class="badge bg-primary text-white">Agregar</span>
+                            `;
+
+                            resultsList.appendChild(item);
+                        });
+
+                        resultsList.classList.toggle('d-none', resultsList.children.length === 0);
+                    };
+
+                    const runFetch = configureParams => {
+                        const url = new URL(endpoint, window.location.origin);
+                        configureParams(url.searchParams);
+
+                        return fetch(url.toString(), {
+                            headers: {
+                                Accept: 'application/json',
+                            },
+                        })
+                            .then(response => (response.ok ? response.json() : []))
+                            .catch(() => []); // Swallow network errors to keep the form responsive even offline.
+                    };
+
+                    const searchByTerm = term => runFetch(params => {
+                        params.set('q', term);
+                    }).then(renderResults);
+
+                    const preloadByIds = ids => {
+                        if (!ids.length) {
+                            return Promise.resolve();
+                        }
+
+                        return runFetch(params => {
+                            ids.forEach(id => params.append('ids[]', id));
+                        }).then(fetched => {
+                            fetched.forEach(addProfessor);
+                        });
+                    };
+
+                    let debounceTimer = null;
+
+                    if (searchInput && resultsList) {
+                        searchInput.addEventListener('input', event => {
+                            const term = event.target.value.trim();
+
+                            if (debounceTimer) {
+                                clearTimeout(debounceTimer);
+                            }
+
+                            if (term.length < 2) {
+                                resultsList.classList.add('d-none');
+                                resultsList.innerHTML = '';
+                                return; // Require at least two characters to reduce noisy queries.
+                            }
+
+                            debounceTimer = setTimeout(() => {
+                                searchByTerm(term);
+                            }, 250);
+                        });
+                    }
+
+                    resultsList?.addEventListener('click', event => {
+                        const target = event.target.closest('[data-professor-result]');
+
+                        if (!target) {
+                            return;
+                        }
+
+                        const professorId = Number.parseInt(target.dataset.professorResult, 10);
+
+                        const professorData = Array.from(resultsList.querySelectorAll('[data-professor-result]'))
+                            .map(button => ({
+                                id: Number.parseInt(button.dataset.professorResult, 10),
+                                name: button.querySelector('.fw-semibold')?.textContent?.trim() ?? '',
+                                document: button.querySelector('.text-secondary')?.textContent?.trim() ?? '',
+                            }))
+                            .find(item => item.id === professorId);
+
+                        if (professorData) {
+                            addProfessor(professorData);
+                        }
+
+                        resultsList.classList.add('d-none');
+                        resultsList.innerHTML = '';
+                    });
+
+                    let initialProfessors = [];
+                    let initialIds = [];
+
+                    try {
+                        initialProfessors = JSON.parse(container.dataset.initialProfessors || '[]');
+                    } catch (error) {
+                        console.warn('Failed to parse initial professor data', error); // Log parsing errors without breaking the form.
+                    }
+
+                    try {
+                        initialIds = JSON.parse(container.dataset.initialIds || '[]');
+                    } catch (error) {
+                        console.warn('Failed to parse initial professor ids', error);
+                    }
+
+                    initialProfessors.forEach(addProfessor);
+
+                    const missingIds = initialIds
+                        .map(id => Number.parseInt(id, 10))
+                        .filter(id => Number.isInteger(id) && !selectedMap.has(id));
+
+                    preloadByIds(missingIds).finally(toggleEmptyHint);
+                });
+            });
+        </script>
+    @endpush
+@endonce
 
 <div class="mb-3 mt-3">
     <label for="title" class="form-label required">Título del proyecto</label>

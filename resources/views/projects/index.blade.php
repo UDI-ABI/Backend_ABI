@@ -112,7 +112,19 @@
                                     <td>{{ $project->id }}</td>
                                     <td class="text-break">{{ $project->title }}</td>
                                     <td>{{ $project->thematicArea->name ?? 'Sin área' }}</td>
-                                    <td><span class="badge bg-indigo">{{ $project->projectStatus->name ?? 'Sin estado' }}</span></td>
+                                    @php
+                                        // Map each status to a high-contrast badge class to meet accessibility requirements.
+                                        $statusName = $project->projectStatus->name ?? 'Sin estado';
+                                        $normalizedStatus = \Illuminate\Support\Str::lower($statusName);
+                                        $statusClasses = [
+                                            'pendiente de aprobación' => 'bg-warning text-dark',
+                                            'devuelto para corrección' => 'bg-danger text-white',
+                                            'aprobado' => 'bg-success text-white',
+                                            'waiting evaluation' => 'bg-primary text-white',
+                                        ];
+                                        $badgeClass = $statusClasses[$normalizedStatus] ?? 'bg-secondary text-white';
+                                    @endphp
+                                    <td><span class="badge {{ $badgeClass }}">{{ $statusName }}</span></td>
                                     <td>
                                         @forelse ($project->professors as $professor)
                                             <div>{{ $professor->name }} {{ $professor->last_name }}</div>

@@ -103,6 +103,10 @@ Route::middleware(['auth', 'role:research_staff'])->group(function () {
 });
 
 Route::middleware(['auth'])->group(function () {
+    Route::get('projects/professors/search', [ProjectController::class, 'searchProfessors'])
+        ->middleware('role:professor,committee_leader') // Limit the lookup endpoint to professors and committee leaders as requested.
+        ->name('projects.professors.search');
+
     Route::resource('projects', ProjectController::class)->except(['destroy']);
 });
 
