@@ -17,8 +17,9 @@ use App\Http\Controllers\ThematicAreaController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectEvaluationController;
-use App\Http\Controllers\BankApprovedIdeasForStudentsController; 
+use App\Http\Controllers\BankApprovedIdeasForStudentsController;
 use App\Http\Controllers\BankApprovedIdeasForProfessorsController;
+use App\Http\Controllers\CityProgramController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -54,6 +55,7 @@ Route::middleware(['auth', 'role:research_staff'])->group(function () {
     // These were added to manage departments and their related cities
     Route::resource('departments', DepartmentController::class);
     Route::resource('cities', CityController::class);
+    Route::resource('city-program', CityProgramController::class);
     Route::get('obtener-ciudades-por-departamento/{id}', [CityController::class, 'obtenerCiudadesPorDepartamento']);
     Route::get('/obtener-ciudades-por-departamento/{id}', [DepartmentController::class, 'ciudadesPorDepartamento'])->name('obtener-ciudades-por-departamento');
     // End of added routes
