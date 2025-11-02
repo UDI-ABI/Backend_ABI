@@ -1,4 +1,4 @@
-{{--
+{{-- 
     Partial path: projects/form.blade.php.
     Purpose: Shared form fields for create and edit operations.
 --}}
@@ -73,6 +73,7 @@
                 <div class="invalid-feedback d-block">{{ $message }}</div>
             @enderror
         </div>
+
         <div class="col-12 col-md-6">
             <label class="form-label">Profesores asociados</label>
             @php
@@ -96,29 +97,45 @@
                         ->values()
                     : collect();
             @endphp
+
+            {{-- ⬇️ Picker compacto de profesores (mismo JS/funcionalidad, UI en un recuadro pequeño con scroll) --}}
             <div class="mb-2" data-professor-search
-                 data-search-endpoint="{{ route('projects.participants.index') }}" {{-- Updated endpoint to include committee leaders in the catalog. --}}
+                 data-search-endpoint="{{ route('projects.participants.index') }}"
                  data-initial-ids='@json($initialProfessorIds)'
                  data-initial-professors='@json($initialProfessorData)'
                  data-initial-options='@json($initialProfessorOptions)'
                  data-pagination='@json($paginationForJs)'>
-                <div class="input-icon mb-2">
-                    <span class="input-icon-addon">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                            <circle cx="10" cy="10" r="7" />
-                            <line x1="21" y1="21" x2="15" y2="15" />
-                        </svg>
-                    </span>
-                    <input type="search" class="form-control" placeholder="Busca por nombre o cédula" autocomplete="off" data-professor-search-input>
-                </div>
-                <div class="list-group shadow-sm d-none" data-professor-search-results></div>
-                <div class="card border mt-3">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <span class="card-title mb-0">Docentes disponibles</span>
-                        <span class="badge bg-secondary" data-professor-available-count>{{ $availableProfessors->count() }}</span>
+                
+                <div class="card border">
+                    <div class="card-header py-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="card-title mb-0">Docentes disponibles</span>
+                            <span class="badge bg-secondary" data-professor-available-count>{{ $availableProfessors->count() }}</span>
+
+                            {{-- buscador dentro del recuadro (compacto) --}}
+                            <div class="ms-auto w-50 position-relative">
+                                <div class="input-icon">
+                                    <span class="input-icon-addon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                            <circle cx="10" cy="10" r="7" />
+                                            <line x1="21" y1="21" x2="15" y2="15" />
+                                        </svg>
+                                    </span>
+                                    <input type="search" class="form-control form-control-sm" placeholder="Buscar por nombre o cédula" autocomplete="off" data-professor-search-input>
+                                </div>
+
+                                {{-- resultados desplegables dentro del mismo recuadro --}}
+                                <div class="list-group shadow position-absolute start-0 end-0 d-none"
+                                     style="z-index:1050; max-height:220px; overflow-y:auto; top:110%;"
+                                     data-professor-search-results></div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="list-group list-group-flush" data-professor-initial-list>
+
+                    {{-- listado compacto con scroll interno --}}
+                    <div class="list-group list-group-flush" data-professor-initial-list
+                         style="max-height:260px; overflow-y:auto;">
                         @forelse ($availableProfessors as $option)
                             <button type="button"
                                     class="list-group-item list-group-item-action text-start"
@@ -136,15 +153,19 @@
                             <div class="text-secondary small px-3 py-2">No hay participantes disponibles.</div>
                         @endforelse
                     </div>
+
                     <div class="card-footer text-center {{ ($availableProfessorsPagination['next_page'] ?? null) ? '' : 'd-none' }}" data-professor-load-more-wrapper>
                         <button type="button" class="btn btn-outline-secondary btn-sm" data-professor-load-more>Ver más</button>
                     </div>
                 </div>
-                <div class="d-flex flex-wrap gap-2" data-professor-selected>
+
+                {{-- chips de seleccionados --}}
+                <div class="d-flex flex-wrap gap-2 mt-2" data-professor-selected>
                     <span class="text-secondary small" data-professor-empty-hint>Sin profesores asociados todavía.</span>
                 </div>
             </div>
-            <small class="form-hint">Puedes añadir múltiples docentes y retirarlos con el botón × de cada ficha.</small>
+            <small class="form-hint">Busca dentro del recuadro, añade con un clic y retira desde la ficha ×.</small>
+
             @error('associated_professors')
                 <div class="invalid-feedback d-block">{{ $message }}</div>
             @enderror
@@ -329,6 +350,11 @@
                         selectedWrapper?.appendChild(createChip(professor));
                         removeOptionButton(professor.id);
                         toggleEmptyHint();
+
+                        // Cerrar resultados si quedan vacíos (en el recuadro compacto)
+                        if (resultsList && resultsList.children.length === 0) {
+                            resultsList.classList.add('d-none');
+                        }
                     };
 
                     const renderProfessorList = (listElement, professors, { replace = false, showActionBadge = false } = {}) => {
@@ -478,16 +504,7 @@
                     };
 
                     initialList?.addEventListener('click', handleOptionClick);
-
-                    if (resultsList) {
-                        resultsList.addEventListener('click', event => {
-                            handleOptionClick(event);
-
-                            if (resultsList.children.length === 0) {
-                                resultsList.classList.add('d-none');
-                            }
-                        });
-                    }
+                    resultsList?.addEventListener('click', handleOptionClick);
 
                     if (loadMoreButton) {
                         loadMoreButton.addEventListener('click', () => {

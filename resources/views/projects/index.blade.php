@@ -88,7 +88,7 @@
                                         </option>
                                     @endforeach
                                 </select>
-                                <small class="form-hint">Filtra los proyectos según el programa del comité.</small>
+                                
                             </div>
                         @endif
                         <div class="col-12 col-md-4 col-lg-2">
