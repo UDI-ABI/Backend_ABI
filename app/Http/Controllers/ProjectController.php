@@ -55,29 +55,30 @@ class ProjectController extends Controller
         $user = AuthUserHelper::fullUser();
         $query = Project::query()
             ->with([
-            'thematicArea.investigationLine',
-            'projectStatus',
-            'professors' => static fn ($relation) => $relation
-                ->with(['user', 'cityProgram.program']) // Added eager loading to reuse the program relationship for committee leader filtering and email display.
-                ->orderBy('last_name')
-                ->orderBy('name'),
-            'students' => static fn ($relation) => $relation->orderBy('last_name')->orderBy('name'),
-        ])
-        ->orderByDesc('created_at');
+                'thematicArea.investigationLine',
+                'projectStatus',
+                'professors' => static fn ($relation) => $relation
+                    ->with(['user', 'cityProgram.program'])
+                    ->orderBy('last_name')
+                    ->orderBy('name'),
+                'students' => static fn ($relation) => $relation
+                    ->orderBy('last_name')
+                    ->orderBy('name'),
+            ])
+            ->orderByDesc('created_at');
 
         $search = trim((string) $request->input('search', ''));
         if ($search !== '') {
             $query->where('title', 'like', "%{$search}%");
         }
 
-        $programFilter = null; // Initialize the variable so we can pass the selected value back to the view with a comment explaining its purpose.
+        $programFilter = null;
 
         if ($user?->role === 'committee_leader') {
-            $programFilter = $request->integer('program_id'); // Capture the desired program filter to keep the pagination query string stable.
-
+            $programFilter = $request->integer('program_id');
             if ($programFilter) {
                 $query->whereHas('professors.cityProgram', static function (Builder $builder) use ($programFilter) {
-                    $builder->where('program_id', $programFilter); // Narrow the project listing to the chosen academic program when a committee leader is browsing.
+                    $builder->where('program_id', $programFilter);
                 });
             }
         }
@@ -97,23 +98,42 @@ class ProjectController extends Controller
         /** @var LengthAwarePaginator $projects */
         $projects = $query->paginate(10)->withQueryString();
 
-        $programCatalog = collect(); // Provide an empty fallback to avoid leaking program listings to other roles.
-
+        $programCatalog = collect();
         if ($user?->role === 'committee_leader') {
-            $programCatalog = Program::query()->orderBy('name')->get(); // Preload the programs list so committee leaders can filter projects without extra queries from the Blade view.
+            $programCatalog = Program::query()->orderBy('name')->get();
+        }
+
+        /**
+         * ✅ Determine if student can create/select a new idea
+         */
+        $enableButtonStudent = true;
+
+        if ($user?->role === 'student' && $user->student) {
+            $studentProjects = $user->student->projects()
+                ->with('projectStatus')
+                ->get();
+
+            if ($studentProjects->isNotEmpty()) {
+                // If any project is NOT rejected → disable the button
+                $enableButtonStudent = $studentProjects->every(function ($project) {
+                    return strtolower($project->projectStatus->name) === 'rechazado';
+                });
+            }
         }
 
         return view('projects.index', [
             'projects' => $projects,
             'search' => $search,
-            'isProfessor' => in_array($user?->role, ['professor', 'committee_leader'], true), // Allow committee leaders to share the professor permissions in the view layer.
+            'isProfessor' => in_array($user?->role, ['professor', 'committee_leader'], true),
             'isStudent' => $user?->role === 'student',
-            'isCommitteeLeader' => $user?->role === 'committee_leader', // Expose the role explicitly to toggle UI elements when needed.
+            'isCommitteeLeader' => $user?->role === 'committee_leader',
             'isResearchStaff' => $user?->role === 'research_staff',
-            'programCatalog' => $programCatalog, // Pass the catalog so the Blade can render the new drop-down in the filters section.
-            'selectedProgram' => $programFilter, // Keep the current filter selected during pagination.
+            'programCatalog' => $programCatalog,
+            'selectedProgram' => $programFilter,
+            'enableButtonStudent' => $enableButtonStudent,
         ]);
     }
+
 
     /**
      * Ensure the current user is allowed to interact with the projects module.
@@ -150,7 +170,29 @@ class ProjectController extends Controller
         if ($isProfessor) {
             $researchGroupId = $activeProfessor?->cityProgram?->program?->research_group_id;
         } else {
-            $researchGroupId = $user->student?->cityProgram?->program?->research_group_id;
+             $student = $user->student;
+            // Obtener los estados bloqueantes
+            $blockedStatuses = [
+                'Aprobado',
+                'Asignado',
+                'Pendiente de aprobación',
+                'Devuelto para corrección',
+            ];
+
+            $hasBlocked = $student->projects()
+                ->whereHas('projectStatus', fn($q) => $q->whereIn('name', $blockedStatuses))
+                ->exists();
+
+            /**
+             *  Bloquear si:
+             * - Tiene algún proyecto en estado bloqueante
+             */
+            if ($hasBlocked) {
+                abort(403, 'No puedes crear una nueva idea porque ya tienes proyectos registrados.');
+            }
+
+            // Si no tiene proyectos o solo rechazados → puede crear
+            $researchGroupId = $student?->cityProgram?->program?->research_group_id;
         }
 
         $cities = City::query()->orderBy('name')->get();
@@ -255,6 +297,25 @@ class ProjectController extends Controller
 
             if ($isResearchStaff) {
                 abort(403, 'Research staff members cannot create project ideas.');
+            }
+
+            $blockedStatuses = [
+                'Aprobado',
+                'Asignado',
+                'Pendiente de aprobación',
+                'Devuelto para corrección',
+            ];
+
+            $hasBlocked = $user->student->projects()
+                ->whereHas('projectStatus', fn($q) => $q->whereIn('name', $blockedStatuses))
+                ->exists();
+
+            /**
+             *  Bloquear si:
+             * - Tiene algún proyecto en estado bloqueante
+             */
+            if ($hasBlocked) {
+                abort(403, 'No puedes crear una nueva idea porque ya tienes proyectos registrados.');
             }
 
             return $this->persistStudentProject($request, $user->student);

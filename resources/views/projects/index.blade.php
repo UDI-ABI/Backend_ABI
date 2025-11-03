@@ -30,7 +30,7 @@
                     </h2>
                     <p class="text-muted mb-0">Consulta tus proyectos y registra nuevas ideas.</p>
                 </div>
-                @if ($isProfessor || $isStudent)
+                @if ($isProfessor || $isStudent && $enableButtonStudent)
                     <div class="col-auto ms-auto d-print-none">
                         <div class="btn-list">
                             <a href="{{ route('projects.create') }}" class="btn btn-primary">

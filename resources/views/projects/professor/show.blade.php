@@ -115,7 +115,7 @@
                                                     {{ $contentFramework->framework->name ?? 'Marco' }}
                                                 </span>
 
-                                                <span class="badge bg-indigo-lt text-indigo mt-1 mb-2" style="width: fit-content;">
+                                                <span class="badge bg-indigo-lt text-indigo mt-1 mb-2 text-wrap" style="width: fit-content;">
                                                     {{ $contentFramework->name }}
                                                 </span>
 

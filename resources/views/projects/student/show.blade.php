@@ -111,16 +111,15 @@
                                 <div class="row g-3">
                                     @foreach ($frameworksSelected as $contentFramework)
                                         <div class="col-12">
-                                            <div class="d-flex flex-column">
-                                                <span class="fw-semibold">
-                                                    {{ $contentFramework->framework->name ?? 'Marco' }}
-                                                </span>
+                                            <div class="d-flex flex-column text-start">
+                                            <span class="fw-semibold">
+                                                {{ $contentFramework->framework->name ?? 'Marco' }}
+                                            </span>
 
-                                                <span class="badge bg-indigo-lt text-indigo mt-1 mb-2" style="width: fit-content;">
-                                                    {{ $contentFramework->name }}
-                                                </span>
-
-                                            </div>
+                                            <span class="badge bg-indigo-lt text-indigo mt-1 mb-2 text-wrap" style="width: fit-content;">
+                                                {{ $contentFramework->name }}
+                                            </span>
+                                        </div>
                                             <hr class="my-2">
                                         </div>
                                     @endforeach
