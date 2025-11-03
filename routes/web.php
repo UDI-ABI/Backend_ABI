@@ -20,6 +20,7 @@ use App\Http\Controllers\ProjectEvaluationController;
 use App\Http\Controllers\BankApprovedIdeasForStudentsController;
 use App\Http\Controllers\BankApprovedIdeasForProfessorsController;
 use App\Http\Controllers\CityProgramController;
+use App\Http\Controllers\BankApprovedIdeasAssignController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -112,13 +113,18 @@ Route::middleware(['auth', 'role:committee_leader'])->prefix('comite/projects/ev
     Route::post('/{project}/evaluate', [ProjectEvaluationController::class, 'evaluate'])->name('evaluate');
 });
 
-Route::middleware(['auth', 'role:student'])->group(function () {
-    Route::get('student/projects/approved', [BankApprovedIdeasForStudentsController::class, 'index'])
-        ->name('student.projects.approved.index');
+Route::middleware(['auth', 'role:student'])->prefix('students/projects')->group(function () {
+    Route::get('approved', [BankApprovedIdeasForStudentsController::class, 'index'])
+        ->name('students.projects.approved.index');
 
-    Route::get('student/projects/approved/{project}', [BankApprovedIdeasForStudentsController::class, 'show'])
-        ->name('student.projects.approved.show');
+    Route::get('approved/{project}', [BankApprovedIdeasForStudentsController::class, 'show'])
+        ->name('students.projects.approved.show');
 
+    Route::get('{project}/select', [BankApprovedIdeasAssignController::class, 'select'])
+        ->name('projects.student.select');
+
+    Route::post('{project}/assign', [BankApprovedIdeasAssignController::class, 'assign'])
+        ->name('projects.student.assign');
 });
 
 Route::middleware(['auth', 'role:professor, committee_leader'])->group(function () {
