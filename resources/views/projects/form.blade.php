@@ -12,13 +12,7 @@
     $thematicAreas = $thematicAreas ?? collect();
     $availableStudents = $availableStudents ?? collect();
     $availableProfessors = collect($availableProfessors ?? []); // Coerce the initial participants into a collection so helper methods like ->values() are available consistently.
-    $availableProfessorsPagination = $availableProfessorsPagination ?? ['current_page' => 1, 'next_page' => null, 'per_page' => 10]; // Provide sane defaults for the pagination metadata when the picker is hidden.
     $initialProfessorOptions = $availableProfessors->values(); // Cache a zero-indexed copy to feed the data attribute used by JavaScript.
-    $paginationForJs = [
-        'current_page' => $availableProfessorsPagination['current_page'] ?? 1,
-        'next_page' => $availableProfessorsPagination['next_page'] ?? null,
-        'per_page' => $availableProfessorsPagination['per_page'] ?? 10,
-    ]; // Normalize the pagination structure before serializing it into HTML.
 @endphp
 
 @if (!empty($versionComment))
@@ -103,8 +97,7 @@
                  data-search-endpoint="{{ route('projects.participants.index') }}"
                  data-initial-ids='@json($initialProfessorIds)'
                  data-initial-professors='@json($initialProfessorData)'
-                 data-initial-options='@json($initialProfessorOptions)'
-                 data-pagination='@json($paginationForJs)'>
+                 data-initial-options='@json($initialProfessorOptions)'>
                 
                 <div class="card border">
                     <div class="card-header py-2">
@@ -122,7 +115,7 @@
                                             <line x1="21" y1="21" x2="15" y2="15" />
                                         </svg>
                                     </span>
-                                    <input id="associate-search" type="search" class="form-control form-control-sm" placeholder="Buscar por nombre, documento o correo" autocomplete="off" data-professor-search-input>
+                                    <input id="associate-search" type="search" class="form-control form-control-sm" placeholder="Buscar por nombre, apellido, documento o correo" autocomplete="off" data-professor-search-input>
                                 </div>
 
                                 {{-- resultados desplegables dentro del mismo recuadro --}}
@@ -154,7 +147,7 @@
                         @endforelse
                     </div>
 
-                    <div class="card-footer text-center {{ ($availableProfessorsPagination['next_page'] ?? null) ? '' : 'd-none' }}" data-professor-load-more-wrapper>
+                    <div class="card-footer text-center d-none" data-professor-load-more-wrapper>
                         <button type="button" class="btn btn-outline-secondary btn-sm" data-professor-load-more>Ver más</button>
                     </div>
                 </div>
@@ -241,19 +234,12 @@
                     const resultsList = container.querySelector('[data-professor-search-results]');
                     const initialList = container.querySelector('[data-professor-initial-list]');
                     const loadMoreWrapper = container.querySelector('[data-professor-load-more-wrapper]');
-                    const loadMoreButton = container.querySelector('[data-professor-load-more]');
                     const countBadge = container.querySelector('[data-professor-available-count]');
                     const selectedWrapper = container.querySelector('[data-professor-selected]');
                     const emptyHint = container.querySelector('[data-professor-empty-hint]');
                     const selectedMap = new Map(); // Track selected participants to keep chips and payloads in sync.
 
-                    let paginationState = {};
-                    try {
-                        paginationState = JSON.parse(container.dataset.pagination || '{}') || {};
-                    } catch (error) {
-                        console.warn('Failed to parse pagination metadata', error); // Keep working even if the dataset is malformed.
-                        paginationState = {};
-                    }
+                    loadMoreWrapper?.classList.add('d-none'); // Hide legacy pagination controls now that the full catalog loads at once.
 
                     let initialOptions = [];
                     try {
@@ -454,7 +440,6 @@
 
                     const searchByTerm = term => runFetch(params => {
                         params.set('q', term);
-                        params.set('per_page', paginationState.per_page ?? 10);
                     }).then(({ data }) => {
                         renderProfessorList(resultsList, data, { replace: true, showActionBadge: true });
                     });
@@ -516,27 +501,7 @@
                     initialList?.addEventListener('click', handleOptionClick);
                     resultsList?.addEventListener('click', handleOptionClick);
 
-                    if (loadMoreButton) {
-                        loadMoreButton.addEventListener('click', () => {
-                            const activeSearch = searchInput?.value.trim().length >= 2;
-
-                            if (!paginationState.next_page || activeSearch) {
-                                return; // Avoid loading the catalog while a filtered search is in progress.
-                            }
-
-                            runFetch(params => {
-                                params.set('page', paginationState.next_page);
-                                params.set('per_page', paginationState.per_page ?? 10);
-                            }).then(({ data, meta }) => {
-                                renderProfessorList(initialList, data, { replace: false });
-                                paginationState = { ...(paginationState || {}), ...(meta || {}) };
-                                loadMoreWrapper?.classList.toggle('d-none', !paginationState.next_page);
-                            });
-                        });
-                    }
-
                     renderProfessorList(initialList, initialOptions, { replace: true });
-                    loadMoreWrapper?.classList.toggle('d-none', !paginationState.next_page);
 
                     let initialProfessors = [];
                     let initialIds = [];

@@ -69,7 +69,6 @@
                                     'thematicAreas' => $thematicAreas ?? collect(),
                                     'availableStudents' => $availableStudents ?? collect(),
                                     'availableProfessors' => $availableProfessors ?? collect(),
-                                    'availableProfessorsPagination' => $availableProfessorsPagination ?? ['current_page' => 1, 'next_page' => null, 'per_page' => 10], // Pass pagination defaults so the component can render the initial list consistently.
                                 ])
 
                                 <div class="d-flex justify-content-end gap-2 mt-4">

@@ -15,7 +15,6 @@ use App\Models\ThematicArea;
 use App\Models\User;
 use App\Models\Version;
 use Carbon\Carbon;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder; // Added to share the participants base query between the HTML preload and the JSON endpoint.
 use Illuminate\Http\JsonResponse; // Added to type-hint JSON responses for the professor search endpoint.
 use Illuminate\Http\RedirectResponse;
@@ -175,7 +174,6 @@ class ProjectController extends Controller
 
         $availableStudents = collect();
         $availableProfessors = collect();
-        $availableProfessorsPagination = ['current_page' => 1, 'next_page' => null, 'per_page' => 10]; // Initialize pagination data so the Blade template can rely on predictable keys.
 
         if ($isProfessor) {
             $professor = $activeProfessor;
@@ -192,13 +190,9 @@ class ProjectController extends Controller
                 'program_id' => optional($professor->cityProgram)->program_id,
             ]);
 
-            $availableProfessorsPaginator = $this->paginateParticipants($professor->id); // Preload the first batch of eligible professors and committee leaders to populate the picker without extra SQL from the view.
-            $availableProfessors = $availableProfessorsPaginator->getCollection()->map(fn (Professor $participant) => $this->presentParticipant($participant)); // Normalize the payload so the Blade template and the JS widget receive consistent fields.
-            $availableProfessorsPagination = [
-                'current_page' => $availableProfessorsPaginator->currentPage(),
-                'next_page' => $availableProfessorsPaginator->hasMorePages() ? $availableProfessorsPaginator->currentPage() + 1 : null,
-                'per_page' => $availableProfessorsPaginator->perPage(),
-            ]; // Expose pagination metadata for the load more button in the interface.
+            $availableProfessors = $this->participantQuery($professor->id)
+                ->get()
+                ->map(fn (Professor $participant) => $this->presentParticipant($participant)); // Provide the full catalog so the picker can render every eligible participant without pagination.
         } else {
             $student = $user->student;
             if (! $student) {
@@ -241,7 +235,6 @@ class ProjectController extends Controller
             'isCommitteeLeader' => $isCommitteeLeader, // Expose the new role so the Blade template can adjust the UI consistently.
             'availableStudents' => $availableStudents,
             'availableProfessors' => $availableProfessors,
-            'availableProfessorsPagination' => $availableProfessorsPagination ?? ['current_page' => 1, 'next_page' => null, 'per_page' => 10], // Provide default pagination info when the picker is not visible (students).
         ]);
     }
 
@@ -365,10 +358,6 @@ class ProjectController extends Controller
 
         $activeProfessor = $this->resolveProfessorProfile($user); // Resolve the shared professor profile so committee leaders also receive consistent exclusions.
         $excludeId = $activeProfessor?->id; // Exclude the authenticated profile from the suggestion list to avoid redundant chips.
-        $perPage = (int) $request->integer('per_page', 10);
-        $perPage = max(1, min($perPage, 25)); // Cap the pagination size to protect the endpoint from excessive loads.
-        $page = max(1, (int) $request->integer('page', 1));
-
         $term = trim((string) $request->input('q', ''));
 
         $query = $this->participantQuery($excludeId);
@@ -387,16 +376,12 @@ class ProjectController extends Controller
             }); // Allow filtering by name, last name, document or email regardless of casing.
         }
 
-        $paginator = $query->paginate($perPage, ['*'], 'page', $page);
+        $participants = $query->get();
 
         return response()->json([
-            'data' => $paginator->getCollection()->map(fn (Professor $professor) => $this->presentParticipant($professor)),
-            'meta' => [
-                'current_page' => $paginator->currentPage(),
-                'next_page' => $paginator->hasMorePages() ? $paginator->currentPage() + 1 : null,
-                'per_page' => $paginator->perPage(),
-            ],
-        ]); // Provide pagination metadata so the UI can keep requesting additional batches.
+            'data' => $participants->map(fn (Professor $professor) => $this->presentParticipant($professor)),
+            'meta' => null,
+        ]); // Return the full catalog so the frontend can display all available participants without pagination.
     }
 
     /**
@@ -416,14 +401,6 @@ class ProjectController extends Controller
             })
             ->orderBy('professors.last_name')
             ->orderBy('professors.name'); // Keep ordering consistent between the initial HTML payload and the AJAX requests.
-    }
-
-    /**
-     * Paginate the participants catalog so both the controller and the JSON endpoint reuse the same defaults.
-     */
-    protected function paginateParticipants(?int $excludeProfessorId = null, int $page = 1, int $perPage = 10): LengthAwarePaginator
-    {
-        return $this->participantQuery($excludeProfessorId)->paginate($perPage, ['*'], 'page', max(1, $page));
     }
 
     /**
@@ -545,13 +522,9 @@ class ProjectController extends Controller
                 'program_id' => optional($contextProfessor->cityProgram)->program_id,
             ]);
 
-            $availableProfessorsPaginator = $this->paginateParticipants(optional($contextProfessor)->id); // Load the first page of potential collaborators while excluding the active editor.
-            $availableProfessors = $availableProfessorsPaginator->getCollection()->map(fn (Professor $participant) => $this->presentParticipant($participant)); // Transform the collection into lightweight arrays for the component.
-            $availableProfessorsPagination = [
-                'current_page' => $availableProfessorsPaginator->currentPage(),
-                'next_page' => $availableProfessorsPaginator->hasMorePages() ? $availableProfessorsPaginator->currentPage() + 1 : null,
-                'per_page' => $availableProfessorsPaginator->perPage(),
-            ]; // Forward pagination metadata to support the "load more" action in the view.
+            $availableProfessors = $this->participantQuery(optional($contextProfessor)->id)
+                ->get()
+                ->map(fn (Professor $participant) => $this->presentParticipant($participant)); // Share the full catalog so editing uses the same dataset as creation.
         } elseif ($useStudentForm) {
             $contextStudent = $isStudent ? $user->student : $project->students->first();
             if (! $contextStudent) {
@@ -611,7 +584,6 @@ class ProjectController extends Controller
             'isResearchStaff' => $isResearchStaff,
             'availableStudents' => $availableStudents,
             'availableProfessors' => $availableProfessors,
-            'availableProfessorsPagination' => $availableProfessorsPagination, // Share pagination info so the component behaves the same in edit mode.
             'frameworks' => $frameworks,
             'selectedContentFrameworkIds' => $selectedContentFrameworkIds,
             'selectedInvestigationLineId' => $selectedInvestigationLineId,
