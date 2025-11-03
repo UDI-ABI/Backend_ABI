@@ -26,17 +26,13 @@ class BankApprovedIdeasForStudentsController extends Controller
         $cityProgramId = $student->city_program_id;
         $thematicAreaId = $request->input('thematic_area_id');
 
-        // 1️⃣ Obtener el registro CityProgram
+        // Obtener grupo de investigación del estudiante
         $cityProgram = \App\Models\CityProgram::find($cityProgramId);
-
-        // 2️⃣ Obtener el programa asociado
         $program = $cityProgram?->program;
-
-        // 3️⃣ Obtener el grupo de investigación
         $researchGroup = $program?->researchGroup;
 
-        // 4️⃣ Obtener las áreas temáticas del grupo
-        $thematicAreas = collect(); // default
+        $thematicAreas = collect();
+
         if ($researchGroup) {
             $thematicAreas = \App\Models\ThematicArea::whereHas('investigationLine', function ($q) use ($researchGroup) {
                     $q->where('research_group_id', $researchGroup->id);
@@ -46,19 +42,17 @@ class BankApprovedIdeasForStudentsController extends Controller
                 ->get();
         }
 
-        // Filtrar proyectos aprobados
+        // 🔥 SOLO PROYECTOS APROBADOS CREADOS POR PROFESORES DEL MISMO CITY_PROGRAM
         $projects = Project::whereHas('projectStatus', fn($q) => $q->where('name', 'Aprobado'))
-            ->where(function ($query) use ($cityProgramId) {
-                $query->whereHas('students', fn($sub) => $sub->where('city_program_id', $cityProgramId))
-                    ->orWhereHas('professors', fn($sub) => $sub->where('city_program_id', $cityProgramId));
+            ->whereHas('professors', function ($q) use ($cityProgramId) {
+                $q->where('city_program_id', $cityProgramId);
             })
             ->with([
                 'projectStatus',
                 'thematicArea.investigationLine',
                 'versions.contentVersions.content',
                 'contentFrameworkProjects.contentFramework.framework',
-                'students',
-                'professors'
+                'professors' // ❗ quitamos students porque ya no se mostrarán proyectos de estudiantes
             ])
             ->paginate($perPage);
 
@@ -70,7 +64,6 @@ class BankApprovedIdeasForStudentsController extends Controller
         ]);
     }
 
-
     public function show(Project $project)
     {
         // Obtener el estudiante autenticado
@@ -78,10 +71,10 @@ class BankApprovedIdeasForStudentsController extends Controller
             ->whereNull('deleted_at')
             ->firstOrFail();
 
-        // Verificar si el proyecto pertenece al mismo programa del estudiante
+        // Validar que pertenece al mismo programa
         $sameProgram = $project->students()
-            ->where('city_program_id', $student->city_program_id)
-            ->exists()
+                ->where('city_program_id', $student->city_program_id)
+                ->exists()
             || $project->professors()
                 ->where('city_program_id', $student->city_program_id)
                 ->exists();
@@ -90,20 +83,43 @@ class BankApprovedIdeasForStudentsController extends Controller
             abort(403, 'No tienes permiso para ver este proyecto.');
         }
 
-        // Cargar relaciones necesarias
+        // Cargar relaciones
         $project->load([
             'projectStatus',
             'thematicArea.investigationLine',
             'versions.contentVersions.content',
             'contentFrameworkProjects.contentFramework.framework',
             'students',
-            'professors',
+            'professors'
         ]);
 
-        // Obtener la última versión del proyecto
+        // Última versión
         $latestVersion = $project->versions()->latest('created_at')->first();
 
-        return view('projects.student.show', compact('project', 'latestVersion'));
+        // Mapear contenidos para que la vista los muestre como label => valor
+        $contentValues = [];
+        if ($latestVersion) {
+            $contentValues = $latestVersion->contentVersions
+                ->mapWithKeys(function ($cv) {
+                    return [$cv->content->name => $cv->value];
+                })
+                ->toArray();
+        }
+
+        // Marcos seleccionados
+        $frameworksSelected = $project->contentFrameworkProjects()
+            ->with('contentFramework.framework')
+            ->get()
+            ->map(function ($item) {
+                return $item->contentFramework;
+            });
+
+        return view('projects.student.show', compact(
+            'project',
+            'latestVersion',
+            'contentValues',
+            'frameworksSelected'
+        ));
     }
 
 }
