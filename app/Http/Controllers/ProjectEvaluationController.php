@@ -84,17 +84,26 @@ class ProjectEvaluationController extends Controller
 
         $statusName = $validated['status'];
 
-        // Search corresponding status
-        $status = ProjectStatus::where('name', $statusName)->first();
-        if (!$status) {
-            return back()->with('error', 'No se encontró el estado seleccionado.');
+        // 🔍 Detectar si el proyecto es de profesor o de estudiantes
+        $isProfessorProject = $project->professors()->exists();
+        $isStudentProject = !$isProfessorProject; // si no tiene profesores, es de estudiantes
+
+        // 🧠 Si el estado asignado es Aprobado y el proyecto es de estudiantes → cambiar a Asignado
+        if ($statusName === 'Aprobado' && $isStudentProject) {
+            $statusName = 'Asignado';
         }
 
-        // Update project status
+        // Buscar el estado final en BD
+        $status = ProjectStatus::where('name', $statusName)->first();
+        if (!$status) {
+            return back()->with('error', "No se encontró el estado '$statusName'.");
+        }
+
+        // ✅ Actualizar estado del proyecto
         $project->update(['project_status_id' => $status->id]);
 
-        // If returned for correction, create ContentVersion
-        if ($statusName === 'Devuelto para corrección') {
+        // 📌 Si se devolvió para corrección, guardar comentarios
+        if ($validated['status'] === 'Devuelto para corrección') {
             $latestVersion = $project->versions()->latest('created_at')->first();
 
             if ($latestVersion) {
@@ -114,7 +123,7 @@ class ProjectEvaluationController extends Controller
 
         return redirect()
             ->route('projects.evaluation.index')
-            ->with('success', "Evaluación del proyecto '{$project->title}' enviada correctamente.");
+            ->with('success', "Evaluación del proyecto '{$project->title}' enviada correctamente con estado: $statusName.");
     }
 
 }

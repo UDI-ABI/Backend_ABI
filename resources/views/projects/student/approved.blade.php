@@ -125,7 +125,7 @@
                                     @endforeach
                                 </td>
                                 <td>
-                                    <a href="{{ route('student.projects.approved.show', $project) }}" 
+                                    <a href="{{ route('students.projects.approved.show', $project) }}" 
                                        class="btn btn-sm btn-outline-success">
                                        Ver detalles
                                     </a>

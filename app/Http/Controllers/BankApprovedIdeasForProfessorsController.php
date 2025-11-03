@@ -13,31 +13,26 @@ class BankApprovedIdeasForProfessorsController extends Controller
      */
     public function index(Request $request)
     {
-        // 1️⃣ Obtener el estudiante autenticado
+        // 1️⃣ Obtener el profesor autenticado
         $professor = Professor::where('user_id', Auth::id())
             ->whereNull('deleted_at')
             ->first();
 
-        // 2️⃣ Validar que exista y tenga programa
         if (!$professor || !$professor->city_program_id) {
-            abort(403, 'No se pudo determinar el programa académico del estudiante.');
+            abort(403, 'No se pudo determinar el programa académico del docente.');
         }
 
         $perPage = $request->input('per_page', 10);
         $cityProgramId = $professor->city_program_id;
         $thematicAreaId = $request->input('thematic_area_id');
 
-        // 1️⃣ Obtener el registro CityProgram
+        // Obtener CityProgram → Programa → Grupo de investigación
         $cityProgram = \App\Models\CityProgram::find($cityProgramId);
-
-        // 2️⃣ Obtener el programa asociado
         $program = $cityProgram?->program;
-
-        // 3️⃣ Obtener el grupo de investigación
         $researchGroup = $program?->researchGroup;
 
-        // 4️⃣ Obtener las áreas temáticas del grupo
-        $thematicAreas = collect(); // default
+        // Áreas temáticas del grupo
+        $thematicAreas = collect();
         if ($researchGroup) {
             $thematicAreas = \App\Models\ThematicArea::whereHas('investigationLine', function ($q) use ($researchGroup) {
                     $q->where('research_group_id', $researchGroup->id);
@@ -47,30 +42,28 @@ class BankApprovedIdeasForProfessorsController extends Controller
                 ->get();
         }
 
-        // Filtrar proyectos aprobados
+        // 🔥 SOLO proyectos aprobados creados por docentes del mismo City Program
         $projects = Project::whereHas('projectStatus', fn($q) => $q->where('name', 'Aprobado'))
-            ->where(function ($query) use ($cityProgramId) {
-                $query->whereHas('students', fn($sub) => $sub->where('city_program_id', $cityProgramId))
-                    ->orWhereHas('professors', fn($sub) => $sub->where('city_program_id', $cityProgramId));
+            ->whereHas('professors', function ($q) use ($cityProgramId) {
+                $q->where('city_program_id', $cityProgramId);
             })
             ->with([
                 'projectStatus',
                 'thematicArea.investigationLine',
                 'versions.contentVersions.content',
                 'contentFrameworkProjects.contentFramework.framework',
-                'students',
-                'professors'
+                'professors' // no se cargan students porque ya no son relevantes
             ])
             ->paginate($perPage);
 
-        return view('projects.student.approved', [
+        return view('projects.professor.approved', [
             'projects' => $projects,
             'thematicAreas' => $thematicAreas,
             'thematicAreaId' => $thematicAreaId,
             'perPage' => $perPage
         ]);
     }
-    
+
     public function show(Project $project)
     {
         // Obtener el profesor autenticado
@@ -80,8 +73,8 @@ class BankApprovedIdeasForProfessorsController extends Controller
 
         // Verificar si el proyecto pertenece al mismo programa del profesor
         $sameProgram = $project->students()
-            ->where('city_program_id', $professor->city_program_id)
-            ->exists()
+                ->where('city_program_id', $professor->city_program_id)
+                ->exists()
             || $project->professors()
                 ->where('city_program_id', $professor->city_program_id)
                 ->exists();
@@ -103,6 +96,29 @@ class BankApprovedIdeasForProfessorsController extends Controller
         // Obtener la última versión del proyecto
         $latestVersion = $project->versions()->latest('created_at')->first();
 
-        return view('projects.professor.show', compact('project', 'latestVersion'));
+        // Mapear contenidos para que la vista los muestre como label => valor
+        $contentValues = [];
+        if ($latestVersion) {
+            $contentValues = $latestVersion->contentVersions
+                ->mapWithKeys(function ($cv) {
+                    return [$cv->content->name => $cv->value];
+                })
+                ->toArray();
+        }
+
+        // Marcos seleccionados
+        $frameworksSelected = $project->contentFrameworkProjects()
+            ->with('contentFramework.framework')
+            ->get()
+            ->map(function ($item) {
+                return $item->contentFramework;
+            });
+
+        return view('projects.professor.show', compact(
+            'project',
+            'latestVersion',
+            'contentValues',
+            'frameworksSelected'
+        ));
     }
 }
