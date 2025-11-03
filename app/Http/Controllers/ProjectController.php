@@ -351,9 +351,11 @@ class ProjectController extends Controller
                 ->get();
 
             return response()->json([
-                'data' => $prefetched->map(fn (Professor $professor) => $this->presentParticipant($professor)),
+                'data' => $prefetched
+                    ->map(fn (Professor $professor) => $this->presentParticipant($professor))
+                    ->values(),
                 'meta' => null,
-            ]); // Return a flat payload so the client can restore selections after validation errors.
+            ]); // Return a flat payload so the client can restore selections after validation errors while keeping numeric indexes in the JSON response.
         }
 
         $activeProfessor = $this->resolveProfessorProfile($user); // Resolve the shared professor profile so committee leaders also receive consistent exclusions.
@@ -379,9 +381,11 @@ class ProjectController extends Controller
         $participants = $query->get();
 
         return response()->json([
-            'data' => $participants->map(fn (Professor $professor) => $this->presentParticipant($professor)),
+            'data' => $participants
+                ->map(fn (Professor $professor) => $this->presentParticipant($professor))
+                ->values(),
             'meta' => null,
-        ]); // Return the full catalog so the frontend can display all available participants without pagination.
+        ]); // Return the full catalog so the frontend can display all available participants without pagination and with sequential indexes for the JavaScript consumer.
     }
 
     /**
@@ -393,7 +397,7 @@ class ProjectController extends Controller
             ->select('professors.*')
             ->with(['user', 'cityProgram.program'])
             ->whereHas('user', static function (Builder $builder) {
-                $builder->whereIn('role', ['professor', 'committee_leader']);
+                $builder->whereIn('role', ['professor', 'committee_leader', 'committe_leader']);
             })
             ->whereNull('professors.deleted_at') // Skip soft-deleted records so they do not appear in the picker or JSON endpoint.
             ->when($excludeProfessorId, static function (Builder $builder, int $exclude) {
