@@ -107,15 +107,16 @@
 
                             {{-- buscador dentro del recuadro (compacto) --}}
                             <div class="ms-auto w-50 position-relative">
-                                <div class="input-icon">
-                                    <span class="input-icon-addon">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-transparent">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                             <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                                             <circle cx="10" cy="10" r="7" />
                                             <line x1="21" y1="21" x2="15" y2="15" />
                                         </svg>
                                     </span>
-                                    <input id="associate-search" type="search" class="form-control form-control-sm" placeholder="Buscar por nombre, apellido, documento o correo" autocomplete="off" data-professor-search-input>
+                                    <input id="associate-search" type="search" class="form-control" placeholder="Buscar por nombre, apellido, documento o correo" autocomplete="off" data-professor-search-input>
+                                    <button type="button" class="btn btn-primary" data-professor-search-submit>Buscar</button>
                                 </div>
 
                                 {{-- resultados desplegables dentro del mismo recuadro --}}
@@ -231,6 +232,7 @@
                     }
 
                     const searchInput = container.querySelector('[data-professor-search-input]');
+                    const searchButton = container.querySelector('[data-professor-search-submit]');
                     const resultsList = container.querySelector('[data-professor-search-results]');
                     const initialList = container.querySelector('[data-professor-initial-list]');
                     const loadMoreWrapper = container.querySelector('[data-professor-load-more-wrapper]');
@@ -327,6 +329,23 @@
                         return chip;
                     };
 
+                    const closeResults = () => {
+                        if (!resultsList) {
+                            return;
+                        }
+
+                        resultsList.classList.add('d-none');
+                        resultsList.innerHTML = '';
+                    };
+
+                    const openResults = () => {
+                        if (!resultsList || resultsList.children.length === 0) {
+                            return;
+                        }
+
+                        resultsList.classList.remove('d-none');
+                    };
+
                     const addProfessor = professor => {
                         if (!professor || !Number.isInteger(professor.id) || selectedMap.has(professor.id)) {
                             return; // Skip invalid data or repeated selections.
@@ -337,10 +356,7 @@
                         removeOptionButton(professor.id);
                         toggleEmptyHint();
 
-                        // Cerrar resultados si quedan vacíos (en el recuadro compacto)
-                        if (resultsList && resultsList.children.length === 0) {
-                            resultsList.classList.add('d-none');
-                        }
+                        closeResults();
                     };
 
                     const renderProfessorList = (listElement, professors, { replace = false, showActionBadge = false } = {}) => {
@@ -354,6 +370,8 @@
 
                         const source = Array.isArray(professors) ? professors : []; // Normalize non-array payloads to keep the renderer resilient against API changes.
 
+                        let rendered = 0;
+
                         source
                             .map(normalizeProfessor)
                             .forEach(professor => {
@@ -361,22 +379,21 @@
                                     return; // Ignore invalid entries and already selected participants.
                                 }
 
-                                const item = document.createElement('button');
-                                item.type = 'button';
-                                item.className = 'list-group-item list-group-item-action text-start';
+                                const item = document.createElement(showActionBadge ? 'div' : 'button');
+                                item.className = 'list-group-item d-flex align-items-start gap-3 text-start';
+                                if (!showActionBadge) {
+                                    item.classList.add('list-group-item-action');
+                                    item.type = 'button';
+                                }
                                 item.dataset.professorOption = professor.id;
                                 item.dataset.professorOptionName = professor.name;
                                 item.dataset.professorOptionDocument = professor.document ?? '';
                                 item.dataset.professorOptionEmail = professor.email ?? '';
 
-                                const layout = document.createElement('div');
-                                layout.className = 'd-flex align-items-start gap-3 w-100';
-                                item.appendChild(layout);
-
                                 const infoWrapper = document.createElement('div');
                                 infoWrapper.className = 'flex-grow-1 overflow-hidden';
                                 infoWrapper.style.minWidth = '0';
-                                layout.appendChild(infoWrapper);
+                                item.appendChild(infoWrapper);
 
                                 const nameLine = document.createElement('span');
                                 nameLine.className = 'fw-semibold d-block text-truncate';
@@ -402,20 +419,33 @@
                                     const actionWrapper = document.createElement('div');
                                     actionWrapper.className = 'flex-shrink-0 ms-auto';
 
-                                    const badge = document.createElement('span');
-                                    badge.className = 'btn btn-primary btn-sm';
-                                    badge.textContent = 'Añadir';
-                                    badge.style.pointerEvents = 'none';
+                                    const actionButton = document.createElement('button');
+                                    actionButton.type = 'button';
+                                    actionButton.className = 'btn btn-primary btn-sm';
+                                    actionButton.textContent = 'Agregar';
+                                    actionButton.dataset.professorAddButton = professor.id;
+                                    actionWrapper.appendChild(actionButton);
 
-                                    actionWrapper.appendChild(badge);
-                                    layout.appendChild(actionWrapper);
+                                    item.appendChild(actionWrapper);
                                 }
 
                                 listElement.appendChild(item);
+                                rendered += 1;
                             });
 
+                        if (listElement === resultsList && rendered === 0) {
+                            const emptyItem = document.createElement('div');
+                            emptyItem.className = 'list-group-item text-secondary small';
+                            emptyItem.textContent = 'No se encontraron coincidencias.';
+                            listElement.appendChild(emptyItem);
+                        }
+
                         if (listElement === resultsList) {
-                            listElement.classList.toggle('d-none', listElement.children.length === 0);
+                            if (listElement.children.length === 0) {
+                                closeResults();
+                            } else {
+                                openResults();
+                            }
                         }
 
                         updateCountBadge();
@@ -456,35 +486,50 @@
                         });
                     };
 
-                    let debounceTimer = null;
+                    const triggerSearch = () => {
+                        if (!searchInput) {
+                            return;
+                        }
+
+                        const term = searchInput.value.trim();
+
+                        if (term === '') {
+                            closeResults();
+                            return;
+                        }
+
+                        searchByTerm(term);
+                    };
+
+                    if (searchButton) {
+                        searchButton.addEventListener('click', event => {
+                            event.preventDefault();
+                            triggerSearch();
+                        });
+                    }
 
                     if (searchInput) {
-                        searchInput.addEventListener('input', event => {
-                            const term = event.target.value.trim();
-
-                            if (debounceTimer) {
-                                clearTimeout(debounceTimer);
+                        searchInput.addEventListener('keydown', event => {
+                            if (event.key === 'Enter') {
+                                event.preventDefault();
+                                triggerSearch();
                             }
 
-                            if (term.length < 2) {
-                                if (resultsList) {
-                                    resultsList.classList.add('d-none');
-                                    resultsList.innerHTML = '';
-                                }
-
-                                return; // Require at least two characters to reduce noisy queries.
+                            if (event.key === 'Escape') {
+                                closeResults();
                             }
-
-                            debounceTimer = setTimeout(() => {
-                                searchByTerm(term);
-                            }, 250);
                         });
                     }
 
                     const handleOptionClick = event => {
+                        const addTrigger = event.target.closest('[data-professor-add-button]');
                         const target = event.target.closest('[data-professor-option]');
 
                         if (!target) {
+                            return;
+                        }
+
+                        if (event.currentTarget === resultsList && !addTrigger) {
                             return;
                         }
 
@@ -500,6 +545,12 @@
 
                     initialList?.addEventListener('click', handleOptionClick);
                     resultsList?.addEventListener('click', handleOptionClick);
+
+                    document.addEventListener('click', event => {
+                        if (!container.contains(event.target)) {
+                            closeResults();
+                        }
+                    });
 
                     renderProfessorList(initialList, initialOptions, { replace: true });
 
