@@ -52,6 +52,22 @@
                 <div class="alert alert-danger">{{ session('error') }}</div>
             @endif
 
+            @if (($isProfessor || $isCommitteeLeader) && ($project->projectStatus?->name === 'Devuelto para corrección') && !empty($reviewComment))
+                <div class="card border-danger mb-3">
+                    <div class="card-header bg-danger text-white">
+                        Comentarios del revisor
+                    </div>
+                    <div class="card-body">
+                        <div class="p-2 border-start border-3 border-danger rounded">
+                            {!! nl2br(e($reviewComment)) !!}
+                        </div>
+                        <small class="text-muted d-block mt-2">
+                            *Corrige tu propuesta según estos comentarios antes de reenviar.
+                        </small>
+                    </div>
+                </div>
+            @endif
+
             <div class="row g-3">
                 <div class="col-12 col-lg-8">
                     <div class="card">

@@ -122,7 +122,7 @@
                                             <line x1="21" y1="21" x2="15" y2="15" />
                                         </svg>
                                     </span>
-                                    <input id="associate-search" type="search" class="form-control form-control-sm" placeholder="Buscar por nombre o cédula" autocomplete="off" data-professor-search-input>
+                                    <input id="associate-search" type="search" class="form-control form-control-sm" placeholder="Buscar por nombre, documento o correo" autocomplete="off" data-professor-search-input>
                                 </div>
 
                                 {{-- resultados desplegables dentro del mismo recuadro --}}

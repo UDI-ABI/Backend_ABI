@@ -310,6 +310,18 @@ class ProjectController extends Controller
         $latestVersion = $project->versions->first();
         $contentValues = $this->mapContentValues($latestVersion);
 
+        $normalizedStatus = Str::lower($project->projectStatus->name ?? '');
+        $reviewComment = null;
+
+        if ($normalizedStatus === 'devuelto para corrección' && $latestVersion) {
+            $reviewContent = $latestVersion->contentVersions
+                ->first(static function (ContentVersion $contentVersion): bool {
+                    return Str::lower($contentVersion->content->name ?? '') === 'comentarios';
+                });
+
+            $reviewComment = $reviewContent?->value;
+        }
+
         $user = AuthUserHelper::fullUser();
 
         return view('projects.show', [
@@ -320,6 +332,7 @@ class ProjectController extends Controller
             'isProfessor' => in_array($user?->role, ['professor', 'committee_leader'], true), // Allow committee leaders to reuse the professor-specific UI controls.
             'isStudent' => $user?->role === 'student',
             'isCommitteeLeader' => $user?->role === 'committee_leader', // Expose the role explicitly so the Blade can toggle actions if needed.
+            'reviewComment' => $reviewComment,
         ]);
     }
 
@@ -361,11 +374,17 @@ class ProjectController extends Controller
         $query = $this->participantQuery($excludeId);
 
         if ($term !== '') {
-            $query->where(static function (Builder $builder) use ($term) {
-                $builder->where('professors.name', 'like', "%{$term}%")
-                    ->orWhere('professors.last_name', 'like', "%{$term}%")
-                    ->orWhere('professors.card_id', 'like', "%{$term}%");
-            }); // Allow filtering by name or document as requested.
+            $normalizedTerm = mb_strtolower($term);
+
+            $query->where(static function (Builder $builder) use ($normalizedTerm, $term) {
+                $builder->whereRaw('LOWER(professors.name) like ?', ["%{$normalizedTerm}%"])
+                    ->orWhereRaw('LOWER(professors.last_name) like ?', ["%{$normalizedTerm}%"])
+                    ->orWhere('professors.card_id', 'like', "%{$term}%")
+                    ->orWhereRaw('LOWER(professors.mail) like ?', ["%{$normalizedTerm}%"])
+                    ->orWhereHas('user', static function (Builder $userQuery) use ($normalizedTerm) {
+                        $userQuery->whereRaw('LOWER(email) like ?', ["%{$normalizedTerm}%"]);
+                    });
+            }); // Allow filtering by name, last name, document or email regardless of casing.
         }
 
         $paginator = $query->paginate($perPage, ['*'], 'page', $page);

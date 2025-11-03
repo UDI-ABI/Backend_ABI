@@ -173,9 +173,11 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="card-footer d-flex justify-content-between align-items-center">
-                    <div class="text-secondary">Mostrando {{ $projects->firstItem() ?? 0 }} a {{ $projects->lastItem() ?? 0 }} de {{ $projects->total() }} registros</div>
-                    {{ $projects->links() }}
+                <div class="card-footer d-flex flex-column flex-lg-row align-items-center justify-content-between gap-2">
+                    <div class="text-secondary mb-2 mb-lg-0">Mostrando {{ $projects->firstItem() ?? 0 }} a {{ $projects->lastItem() ?? 0 }} de {{ $projects->total() }} registros</div>
+                    @if ($projects->hasPages())
+                        {{ $projects->links('vendor.pagination.bootstrap-5-numeric') }}
+                    @endif
                 </div>
             </div>
         </div>
