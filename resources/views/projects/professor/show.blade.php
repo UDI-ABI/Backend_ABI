@@ -29,7 +29,7 @@
                     <p class="text-muted mb-0">Consulta la versión más reciente de la propuesta y sus participantes asociados.</p>
                 </div>
                 <div class="col-auto ms-auto d-print-none">
-                    <a href="{{ route('student.projects.approved.index') }}" class="btn btn-outline-secondary">Volver al listado</a>
+                    <a href="{{ route('professor.projects.approved.index') }}" class="btn btn-outline-secondary">Volver al listado</a>
                 </div>
             </div>
         </div>
@@ -115,7 +115,7 @@
                                                     {{ $contentFramework->framework->name ?? 'Marco' }}
                                                 </span>
 
-                                                <span class="badge bg-indigo-lt text-indigo mt-1 mb-2" style="width: fit-content;">
+                                                <span class="badge bg-indigo-lt text-indigo mt-1 mb-2 text-wrap" style="width: fit-content;">
                                                     {{ $contentFramework->name }}
                                                 </span>
 

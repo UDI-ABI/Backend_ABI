@@ -28,14 +28,9 @@
                     </h2>
                     <p class="text-muted mb-0">Consulta la versión más reciente de la propuesta y sus participantes asociados.</p>
                 </div>
-                @php
-                    // Determine whether the project is awaiting approval to hide the edit button consistently with server-side guards.
-                    $statusName = $project->projectStatus->name ?? 'Sin estado';
-                    $isPendingApproval = \Illuminate\Support\Str::lower($statusName) === 'pendiente de aprobación';
-                @endphp
                 <div class="col-auto ms-auto d-print-none">
                     <a href="{{ route('projects.index') }}" class="btn btn-outline-secondary">Volver al listado</a>
-                    @if (! $isPendingApproval)
+                    @if($canEdit && !$isResearchStaff)
                         <a href="{{ route('projects.edit', $project) }}" class="btn btn-primary">Editar</a>
                     @endif
                 </div>
@@ -150,7 +145,7 @@
                                                     {{ $contentFramework->framework->name ?? 'Marco' }}
                                                 </span>
 
-                                                <span class="badge bg-indigo-lt text-indigo mt-1 mb-2" style="width: fit-content;">
+                                                <span class="badge bg-indigo-lt text-indigo mt-1 mb-2 text-wrap" style="width: fit-content;">
                                                     {{ $contentFramework->name }}
                                                 </span>
 
