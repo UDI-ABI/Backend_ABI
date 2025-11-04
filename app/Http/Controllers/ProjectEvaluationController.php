@@ -56,24 +56,41 @@ class ProjectEvaluationController extends Controller
     }
 
    // app/Http/Controllers/ProjectEvaluationController.php
-
     public function show(Project $project)
     {
         // Cargar relaciones necesarias
         $project->load([
-            'projectStatus',
             'thematicArea.investigationLine',
-            'versions.contentVersions.content',
-            'contentFrameworkProjects.contentFramework.framework',
+            'projectStatus',
+            'professors.user', // Eager load the user to expose a reliable email address on the detail page.
+            'professors.cityProgram.program', // Preload the program so committee leaders can see contextual data without extra queries.
             'students',
-            'professors',
+            'contentFrameworks.framework', // ← Añadido
+            'versions' => static fn ($relation) => $relation
+                ->with(['contentVersions.content'])
+                ->orderByDesc('created_at'),
         ]);
 
-        // Latest version of the project
+        // Última versión del proyecto
         $latestVersion = $project->versions()->latest('created_at')->first();
 
-        return view('projects.evaluation.show', compact('project', 'latestVersion'));
+        // Preparar contenidos de la versión (puede quedar vacío si no hay versión)
+        $contentValues = [];
+
+        if ($latestVersion) {
+            foreach ($latestVersion->contentVersions as $cv) {
+                $label = $cv->content->label ?? $cv->content->name ?? 'Campo';
+                $contentValues[$label] = $cv->value ?? '-';
+            }
+        }
+
+        // ---- Frameworks aplicados ----
+        // Se obtienen desde la relación contentFrameworkProjects
+        $frameworksSelected = $project->contentFrameworks;
+
+        return view('projects.evaluation.show', compact('project', 'latestVersion', 'contentValues', 'frameworksSelected'));
     }
+
 
     public function evaluate(Request $request, Project $project)
     {
