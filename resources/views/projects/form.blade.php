@@ -94,87 +94,101 @@
 
                 $professorPrograms = $availableProfessors
                     ->map(static function ($option) {
+                        $programName = $option['program'] ?? null;
+                        $cityName = $option['program_city'] ?? null;
+                        $programId = $option['program_id'] ?? null;
+
+                        if (empty($programName) || empty($programId)) {
+                            return null;
+                        }
+
+                        $displayName = $programName;
+                        if (! empty($cityName)) {
+                            $displayName = sprintf('%s — %s', $programName, $cityName);
+                        }
+
                         return [
-                            'id' => $option['program_id'] ?? null,
-                            'name' => $option['program'] ?? null,
+                            'id' => $programId,
+                            'name' => $displayName,
                         ];
                     })
-                    ->filter(static fn ($option) => ! empty($option['name']) && ! empty($option['id']))
+                    ->filter()
                     ->unique(static fn ($option) => $option['id'])
                     ->sortBy('name')
                     ->values();
             @endphp
 
             {{-- Picker simplificado de profesores --}}
-            <div class="mb-2" data-professor-search data-initial-professors='@json($initialProfessorData)'>
-
-                <div class="card border shadow-sm">
-                    <div class="card-header py-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="card-title mb-0">Docentes disponibles</span>
-                            <span class="badge bg-secondary" data-professor-available-count>{{ $availableProfessors->count() }}</span>
-                        </div>
+            <div class="card card-sm shadow-none border border-dashed professor-picker-card" data-professor-search data-initial-professors='@json($initialProfessorData)'>
+                <div class="card-header py-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="card-title mb-0">Docentes disponibles</span>
+                        <span class="badge bg-secondary" data-professor-available-count>{{ $availableProfessors->count() }}</span>
                     </div>
+                </div>
 
-                    <div class="card-body border-bottom py-3">
-                        <div class="row g-2">
-                            <div class="col-12 col-md">
-                                <label for="professor-search-input" class="form-label text-secondary mb-1">Buscar docente</label>
-                                <div class="input-icon">
-                                    <span class="input-icon-addon">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                            <circle cx="10" cy="10" r="7" />
-                                            <line x1="21" y1="21" x2="15" y2="15" />
-                                        </svg>
-                                    </span>
-                                    <input type="text" id="professor-search-input" class="form-control" placeholder="Nombre, documento o correo" data-professor-search-input>
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-auto">
-                                <label for="professor-program-filter" class="form-label text-secondary mb-1">Programa académico</label>
-                                <select id="professor-program-filter" class="form-select" data-professor-program-filter>
-                                    <option value="">Todos los programas</option>
-                                    @foreach ($professorPrograms as $programOption)
-                                        <option value="{{ $programOption['id'] }}">{{ $programOption['name'] }}</option>
-                                    @endforeach
-                                </select>
+                <div class="card-body pb-2">
+                    <div class="row g-2">
+                        <div class="col-12 col-md">
+                            <label for="professor-search-input" class="form-label text-secondary mb-1">Buscar docente</label>
+                            <div class="input-icon">
+                                <span class="input-icon-addon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                        <circle cx="10" cy="10" r="7" />
+                                        <line x1="21" y1="21" x2="15" y2="15" />
+                                    </svg>
+                                </span>
+                                <input type="text" id="professor-search-input" class="form-control" placeholder="Nombre, documento o correo" data-professor-search-input>
                             </div>
                         </div>
-                    </div>
-
-                    {{-- listado compacto con scroll interno --}}
-                    <div class="list-group list-group-flush" data-professor-initial-list
-                         style="max-height:260px; overflow-y:auto;">
-                        @forelse ($availableProfessors as $option)
-                            <button type="button"
-                                    class="list-group-item list-group-item-action text-start"
-                                    data-professor-option="{{ $option['id'] }}"
-                                    data-professor-option-name="{{ $option['name'] }}"
-                                    data-professor-option-document="{{ $option['document'] }}"
-                                    data-professor-option-email="{{ $option['email'] }}"
-                                    data-professor-option-program="{{ $option['program_id'] ?? '' }}"
-                                    data-professor-option-program-name="{{ $option['program'] ?? '' }}">
-                                <span class="fw-semibold d-block">{{ $option['name'] }}</span>
-                                <span class="text-secondary small d-block">{{ $option['document'] ?? 'Sin documento' }}</span>
-                                @if(!empty($option['email']))
-                                    <span class="text-secondary small d-block">{{ $option['email'] }}</span>
-                                @endif
-                                @if(!empty($option['program']))
-                                    <span class="text-secondary small d-block">Programa: {{ $option['program'] }}</span>
-                                @endif
-                            </button>
-                        @empty
-                            <div class="text-secondary small px-3 py-2">No hay participantes disponibles.</div>
-                        @endforelse
+                        <div class="col-12 col-md-auto">
+                            <label for="professor-program-filter" class="form-label text-secondary mb-1">Programa académico</label>
+                            <select id="professor-program-filter" class="form-select" data-professor-program-filter>
+                                <option value="">Todos los programas</option>
+                                @foreach ($professorPrograms as $programOption)
+                                    <option value="{{ $programOption['id'] }}">{{ $programOption['name'] }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
 
                     <div class="px-3 py-2 text-secondary small d-none" data-professor-empty-list data-empty-default="No hay docentes disponibles." data-empty-filter="No hay docentes que coincidan con la búsqueda."></div>
                 </div>
 
+                {{-- listado compacto con scroll interno --}}
+                <div class="list-group list-group-flush border-top professor-picker-list" data-professor-initial-list>
+                    @forelse ($availableProfessors as $option)
+                        <button type="button"
+                                class="list-group-item list-group-item-action text-start"
+                                data-professor-option="{{ $option['id'] }}"
+                                data-professor-option-name="{{ $option['name'] }}"
+                                data-professor-option-document="{{ $option['document'] }}"
+                                data-professor-option-email="{{ $option['email'] }}"
+                                data-professor-option-program="{{ $option['program_id'] ?? '' }}"
+                                data-professor-option-program-name="{{ $option['program'] ?? '' }}"
+                                data-professor-option-program-city="{{ $option['program_city'] ?? '' }}">
+                            <span class="fw-semibold d-block">{{ $option['name'] }}</span>
+                            <span class="text-secondary small d-block">{{ $option['document'] ?? 'Sin documento' }}</span>
+                            @if(!empty($option['email']))
+                                <span class="text-secondary small d-block">{{ $option['email'] }}</span>
+                            @endif
+                            @if(!empty($option['program']))
+                                <span class="text-secondary small d-block">Programa: {{ $option['program'] }}@if(!empty($option['program_city'])) — {{ $option['program_city'] }}@endif</span>
+                            @endif
+                        </button>
+                    @empty
+                        <div class="text-secondary small px-3 py-2">No hay participantes disponibles.</div>
+                    @endforelse
+                </div>
+
+                <div class="px-3 py-2 text-secondary small d-none border-top" data-professor-empty-list data-empty-default="No hay docentes disponibles." data-empty-filter="No hay docentes que coincidan con la búsqueda."></div>
+
                 {{-- chips de seleccionados --}}
-                <div class="d-flex flex-wrap gap-2 mt-2" data-professor-selected>
-                    <span class="text-secondary small" data-professor-empty-hint>Sin profesores asociados todavía.</span>
+                <div class="card-footer bg-white border-top py-2">
+                    <div class="d-flex flex-wrap gap-2" data-professor-selected>
+                        <span class="text-secondary small" data-professor-empty-hint>Sin profesores asociados todavía.</span>
+                    </div>
                 </div>
             </div>
             <small class="form-hint">Haz clic en un profesor para agregarlo. Retira desde la ficha ×.</small>
@@ -238,6 +252,31 @@
     </div>
 </div>
 
+
+@once
+    @push('css')
+        <style>
+            .professor-picker-card {
+                display: flex;
+                flex-direction: column;
+                gap: 0;
+                max-height: 100%;
+            }
+
+            .professor-picker-list {
+                flex: 1 1 auto;
+                max-height: 260px;
+                overflow-y: auto;
+            }
+
+            @media (max-width: 767.98px) {
+                .professor-picker-list {
+                    max-height: 320px;
+                }
+            }
+        </style>
+    @endpush
+@endonce
 
 @once
     @push('js')

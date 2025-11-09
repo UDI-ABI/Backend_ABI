@@ -491,7 +491,7 @@ class ProjectController extends Controller
     {
         return Professor::query()
             ->select('professors.*')
-            ->with(['user', 'cityProgram.program'])
+            ->with(['user', 'cityProgram.program', 'cityProgram.city'])
             ->whereHas('user', static function (Builder $builder) {
                 $builder->whereIn('role', ['professor', 'committee_leader', 'committe_leader']);
             })
@@ -515,7 +515,8 @@ class ProjectController extends Controller
             'email' => $professor->mail ?? $professor->user?->email,
             'program' => optional($professor->cityProgram?->program)->name,
             'program_id' => $professor->cityProgram?->program_id,
-        ]; // Include the email and program so the interface can display richer context while selecting collaborators.
+            'program_city' => optional($professor->cityProgram?->city)->name,
+        ]; // Include the email, program and city so the interface can display richer context while selecting collaborators.
     }
 
     /**
