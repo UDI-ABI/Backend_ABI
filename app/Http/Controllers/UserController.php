@@ -539,7 +539,6 @@ class UserController extends Controller
                 $student = ResearchStaffStudent::where('user_id', $user->id)->first();
                 if ($student) {
                     $student->update([
-                        'card_id' => $data['card_id'],
                         'name' => $data['name'],
                         'last_name' => $data['last_name'],
                         'phone' => $data['phone'],
@@ -554,7 +553,6 @@ class UserController extends Controller
                 $professor = ResearchStaffProfessor::where('user_id', $user->id)->first();
                 if ($professor) {
                     $professor->update([
-                        'card_id' => $data['card_id'],
                         'name' => $data['name'],
                         'last_name' => $data['last_name'],
                         'phone' => $data['phone'],
@@ -568,7 +566,6 @@ class UserController extends Controller
                 $researchStaff = ResearchStaffResearchStaff::where('user_id', $user->id)->first();
                 if ($researchStaff) {
                     $researchStaff->update([
-                        'card_id' => $data['card_id'],
                         'name' => $data['name'],
                         'last_name' => $data['last_name'],
                         'phone' => $data['phone'],
