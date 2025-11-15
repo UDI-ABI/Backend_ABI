@@ -12,12 +12,12 @@ class PerfilControllerTest extends TestCase
     use RefreshDatabase;
 
     /** @test */
-    public function test_can_view_edit_profile_page()
+    public function test_research_staff_can_view_edit_profile_page()
     {
         $user = ResearchStaffUser::create([
             'email' => 'test@example.com',
             'password' => Hash::make('password'),
-            'role' => 'student',
+            'role' => 'research_staff',
             'state' => 1,
         ]);
 
@@ -129,10 +129,20 @@ class PerfilControllerTest extends TestCase
     }
 
     /** @test */
-    public function test_requires_authentication()
+    public function test_requires_role_for_edit_and_all_can_view_show()
     {
-        $response = $this->get(route('perfil.edit'));
+        $student = ResearchStaffUser::create([
+            'email' => 'student@example.com',
+            'password' => Hash::make('password'),
+            'role' => 'student',
+            'state' => 1,
+        ]);
 
-        $response->assertRedirect(route('login'));
+        $editResponse = $this->actingAs($student)->get(route('perfil.edit'));
+        $editResponse->assertStatus(403);
+
+        $showResponse = $this->actingAs($student)->get(route('perfil.show'));
+        $showResponse->assertStatus(200);
+        $showResponse->assertViewIs('perfil_show');
     }
 }
