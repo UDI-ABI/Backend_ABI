@@ -19,7 +19,15 @@ class BankApprovedIdeasForProfessorsController extends Controller
             ->first();
 
         if (!$professor || !$professor->city_program_id) {
-            abort(403, 'No se pudo determinar el programa académico del docente.');
+            $perPage = $request->input('per_page', 10);
+            $thematicAreas = collect();
+            $projects = Project::whereRaw('1 = 0')->paginate($perPage);
+            return view('projects.professor.approved', [
+                'projects' => $projects,
+                'thematicAreas' => $thematicAreas,
+                'thematicAreaId' => null,
+                'perPage' => $perPage,
+            ])->with('error', 'Completa tu asignación de programa para ver proyectos aprobados.');
         }
 
         $perPage = $request->input('per_page', 10);

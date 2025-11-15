@@ -485,6 +485,22 @@ class ProjectController extends Controller
     }
 
     /**
+     * Render a simple view that consumes the JSON endpoint to list participants.
+     */
+    public function participantsPage(): View
+    {
+        [$user, $isProfessor] = $this->ensureRoleAccess();
+        if (! $isProfessor) {
+            abort(403);
+        }
+
+        $programs = Program::orderBy('name')->get();
+        return view('participants.index', [
+            'programs' => $programs,
+        ]);
+    }
+
+    /**
      * Build the base query for participants, optionally excluding the authenticated profile.
      */
     protected function participantQuery(?int $excludeProfessorId = null): Builder

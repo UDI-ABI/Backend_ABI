@@ -28,16 +28,7 @@
                     </h2>
                     <p class="text-muted mb-0">Administra los valores diligenciados para cada contenido dentro de las versiones de proyecto.</p>
                 </div>
-                <div class="col-auto ms-auto d-print-none">
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-content-version" id="btn-new-content-version">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                            <path d="M12 5v14" />
-                            <path d="M5 12h14" />
-                        </svg>
-                        Nuevo registro
-                    </button>
-                </div>
+                <div class="col-auto ms-auto d-print-none"></div>
             </div>
         </div>
     </div>
@@ -311,12 +302,6 @@
                                         <a href="${showUrl}" class="btn btn-sm btn-outline-primary" title="Ver">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2" /><path d="M22 12c-2.667 4.667-6 7-10 7s-7.333-2.333-10-7c2.667-4.667 6-7 10-7s7.333 2.333 10 7" /></svg>
                                         </a>
-                                        <button type="button" class="btn btn-sm btn-outline-success" data-action="edit" data-id="${item.id}" title="Editar">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-outline-danger" data-action="delete" data-id="${item.id}" data-name="${escapeHtml(contentNamePlain)}" title="Eliminar">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3h6v3" /></svg>
-                                        </button>
                                     </div>
                                 </td>
                             </tr>

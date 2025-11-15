@@ -48,8 +48,8 @@ Route::middleware(['auth', 'role:research_staff'])->group(function () {
     Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
     Route::put('users/{user}/activate', [UserController::class, 'activate'])->name('users.activate');
 
-    // Profile
-    Route::get('/perfil', [PerfilController::class, 'edit'])->name('perfil.edit');
+    // Profile (edición solo personal de investigaciones)
+    Route::get('/perfil/editar', [PerfilController::class, 'edit'])->name('perfil.edit');
     Route::put('/perfil', [PerfilController::class, 'update'])->name('perfil.update');
     
     //  Added routes for Departments and Cities (new addition)
@@ -104,9 +104,17 @@ Route::middleware(['auth', 'role:research_staff'])->group(function () {
 });
 
 Route::middleware(['auth'])->group(function () {
+    // Perfil (vista de solo lectura para cualquier usuario autenticado)
+    Route::get('/perfil', [PerfilController::class, 'show'])->name('perfil.show');
+
     Route::get('projects/participants', [ProjectController::class, 'participants'])
         ->middleware('role:professor,committee_leader') // Keep the catalog restricted to professors and committee leaders.
         ->name('projects.participants');
+
+    // Vista navegable para participantes
+    Route::get('consultas/participantes', [ProjectController::class, 'participantsPage'])
+        ->middleware('role:professor,committee_leader')
+        ->name('participants.index');
 
     Route::resource('projects', ProjectController::class)->except(['destroy']);
 });

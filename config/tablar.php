@@ -172,7 +172,7 @@ return [
     [
         'text' => 'Perfil',
         'icon' => 'ti ti-user-circle',
-        'route' => 'perfil.edit',
+        'route' => 'perfil.show',
     ],
 
     // =================================================================
@@ -292,11 +292,6 @@ return [
                 'icon' => 'ti ti-folders',
                 'route' => 'content-frameworks.index',
             ],
-            [
-                'text' => 'Asignación de Contenidos',
-                'icon' => 'ti ti-circle-dashed',
-                'route' => 'content-framework-project.index',
-            ],
         ],
     ],
     [
@@ -352,26 +347,10 @@ return [
     [
         'text' => 'Participantes',
         'icon' => 'ti ti-users-group',
-        'route' => 'projects.participants',
+        'route' => 'participants.index',
         'hasAnyRole' => ['professor', 'committee_leader'],
     ],
-    [
-        'text' => 'Recursos',
-        'icon' => 'ti ti-files',
-        'hasAnyRole' => ['professor', 'committee_leader'],
-        'submenu' => [
-            [
-                'text' => 'Frameworks Disponibles',
-                'icon' => 'ti ti-square-rotated',
-                'url' => '#', // O ruta específica si existe
-            ],
-            [
-                'text' => 'Guías y Documentación',
-                'icon' => 'ti ti-file-text',
-                'url' => '#', // O ruta específica si existe
-            ],
-        ],
-    ],
+    // Se elimina el menú "Recursos" por no tener vistas funcionales
 ],
 
 

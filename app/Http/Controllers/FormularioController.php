@@ -6,6 +6,11 @@ use Illuminate\Http\Request;
 
 class FormularioController extends Controller
 {
+    public function index()
+    {
+        return view('formulario.index');
+    }
+
     /**
      * Muestra el formulario con todos los departamentos y ciudades de Colombia.
      *
@@ -39,6 +44,6 @@ class FormularioController extends Controller
         // Por ejemplo, guardar en la base de datos, etc.
         
         // Redirecciona a donde sea apropiado después de guardar
-        return redirect()->back()->with('success', 'Selección guardada correctamente.');
+        return redirect()->route('formulario.index')->with('success', 'Selección guardada correctamente.');
     }
 }

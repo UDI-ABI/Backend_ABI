@@ -8,6 +8,11 @@ use Illuminate\Support\Facades\Hash;
 
 class PerfilController extends Controller
 {
+    public function show()
+    {
+        return view('perfil_show');
+    }
+
     public function edit()
     {
         return view('perfil');
@@ -20,7 +25,7 @@ class PerfilController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'password' => 'required|string|min:8|confirmed',
+            'password' => 'nullable|string|min:8|confirmed',
         ]);
 
         $user->name = $request->input('name');

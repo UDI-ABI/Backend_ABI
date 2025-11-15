@@ -28,18 +28,7 @@
                     </h2>
                     <p class="text-muted mb-0">Registra y administra las diferentes iteraciones de tus proyectos.</p>
                 </div>
-                <div class="col-auto ms-auto d-print-none">
-                    <div class="btn-list">
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-version" id="btn-new-version">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M12 5v14" />
-                                <path d="M5 12h14" />
-                            </svg>
-                            Nueva versión
-                        </button>
-                    </div>
-                </div>
+                <div class="col-auto ms-auto d-print-none"></div>
             </div>
         </div>
     </div>
@@ -277,8 +266,6 @@
                                 <td>
                                     <div class="btn-list flex-nowrap justify-content-center">
                                         <a class="btn btn-sm btn-outline-primary" href="${showUrl}" title="Ver">${icons.view}</a>
-                                        <a class="btn btn-sm btn-outline-success" href="${editUrl}" title="Editar">${icons.edit}</a>
-                                        <button class="btn btn-sm btn-outline-danger" data-action="delete" data-id="${item.id}" data-title="${safeDeleteLabel}" title="Eliminar">${icons.delete}</button>
                                     </div>
                                 </td>
                             </tr>
@@ -497,12 +484,15 @@
                 }
             });
 
-            document.getElementById('btn-new-version').addEventListener('click', () => {
-                state.currentId = null;
-                modalTitle.textContent = 'Nueva versión';
-                submitBtn.textContent = 'Guardar versión';
-                projectField.value = '';
-            });
+            const newBtn = document.getElementById('btn-new-version');
+            if (newBtn) {
+                newBtn.addEventListener('click', () => {
+                    state.currentId = null;
+                    modalTitle.textContent = 'Nueva versión';
+                    submitBtn.textContent = 'Guardar versión';
+                    projectField.value = '';
+                });
+            }
 
             fetchVersions(buildQuery());
         });
