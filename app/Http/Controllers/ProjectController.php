@@ -74,7 +74,7 @@ class ProjectController extends Controller
             $query->where('title', 'like', "%{$search}%");
         }
 
-        // NUEVO: Filtro por estado del proyecto
+        // Filtro por estado del proyecto
         $statusFilter = $request->input('status_id');
         if ($statusFilter) {
             $query->where('project_status_id', $statusFilter);
@@ -99,14 +99,18 @@ class ProjectController extends Controller
             $query->whereHas('students', static function ($relation) use ($studentId) {
                 $relation->where('students.id', $studentId);
             });
-        } elseif ($user?->role === 'committee_leader') {
-            // Committee leaders solo ven proyectos de su mismo programa
-            if ($user->professor && $user->professor->cityProgram) {
-                $programId = $user->professor->cityProgram->program_id;
-                $query->whereHas('professors.cityProgram', static function ($relation) use ($programId) {
-                    $relation->where('program_id', $programId);
+        } elseif ($user?->role === 'committee_leader' && $user->professor && $user->professor->cityProgram) {
+            $programId = $user->professor->cityProgram->program_id;
+
+            // Un proyecto será visible si tiene profesor O estudiante del mismo programa
+            $query->where(function ($q) use ($programId) {
+                $q->whereHas('professors.cityProgram', function ($p) use ($programId) {
+                    $p->where('program_id', $programId);
+                })
+                ->orWhereHas('students.cityProgram', function ($s) use ($programId) {
+                    $s->where('program_id', $programId);
                 });
-            }
+            });
         }
 
         /** @var LengthAwarePaginator $projects */
