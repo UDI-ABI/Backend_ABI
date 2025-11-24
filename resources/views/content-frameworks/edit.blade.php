@@ -4,7 +4,7 @@
 --}}
 @extends('tablar::page')
 
-@section('title', 'Editar contenido de framework')
+@section('title', 'Editar contenido de marco')
 
 @section('content')
     <div class="page-header d-print-none">
@@ -14,7 +14,7 @@
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item"><a href="{{ route('home') }}">Inicio</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('content-frameworks.index') }}">Contenidos de framework</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('content-frameworks.index') }}">Contenidos de marco</a></li>
                             <li class="breadcrumb-item active" aria-current="page">Editar</li>
                         </ol>
                     </nav>
@@ -24,10 +24,10 @@
                             <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" />
                             <path d="M16 5l3 3" />
                         </svg>
-                        Editar contenido de framework
+                        Editar contenido del marco
                         <span class="badge bg-success-lt ms-2">#{{ $contentFramework->id }}</span>
                     </h2>
-                    <p class="text-muted mb-0">Actualiza la información del contenido sin perder la relación con su framework.</p>
+                    <p class="text-muted mb-0">Actualiza la información del contenido sin perder la relación con su marco.</p>
                 </div>
                 <div class="col-auto ms-auto d-print-none">
                     <div class="btn-list">

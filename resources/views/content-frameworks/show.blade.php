@@ -5,7 +5,7 @@
 --}}
 @extends('tablar::page')
 
-@section('title', 'Detalle de contenido de framework')
+@section('title', 'Detalle de contenido del marco')
 
 @section('content')
     <div class="page-header d-print-none">
@@ -15,7 +15,7 @@
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item"><a href="{{ route('home') }}">Inicio</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('content-frameworks.index') }}">Contenidos de framework</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('content-frameworks.index') }}">Contenidos del marco</a></li>
                             <li class="breadcrumb-item active" aria-current="page">{{ $contentFramework->name }}</li>
                         </ol>
                     </nav>
@@ -27,7 +27,7 @@
                         Detalle de contenido
                         <span class="badge bg-info-lt ms-2">#{{ $contentFramework->id }}</span>
                     </h2>
-                    <p class="text-muted mb-0">Consulta la información almacenada para este contenido asociado a un framework.</p>
+                    <p class="text-muted mb-0">Consulta la información almacenada para este contenido asociado a un marco.</p>
                 </div>
                 <div class="col-auto ms-auto d-print-none">
                     <div class="btn-list">
@@ -57,7 +57,7 @@
                                         Framework: {{ \Illuminate\Support\Str::limit($contentFramework->framework->name, 40) }}
                                     </a>
                                 @else
-                                    <span class="badge bg-secondary-lt">Sin framework</span>
+                                    <span class="badge bg-secondary-lt">Sin marco</span>
                                 @endif
                             </div>
                         </div>
@@ -90,7 +90,7 @@
                                 <p class="text-secondary mb-2">Acciones rápidas</p>
                                 <div class="btn-list">
                                     <a class="btn btn-outline-primary" href="{{ route('content-frameworks.create', ['framework_id' => $contentFramework->framework_id]) }}">Agregar otro contenido</a>
-                                    <a class="btn btn-outline-secondary" href="{{ route('content-frameworks.index', ['framework_id' => $contentFramework->framework_id]) }}">Ver contenidos del framework</a>
+                                    <a class="btn btn-outline-secondary" href="{{ route('content-frameworks.index', ['framework_id' => $contentFramework->framework_id]) }}">Ver contenidos del marco</a>
                                 </div>
                             @endif
                         </div>

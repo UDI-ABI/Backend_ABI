@@ -5,7 +5,7 @@
 --}}
 @extends('tablar::page')
 
-@section('title', 'Detalle del framework')
+@section('title', 'Detalle del marco')
 
 @section('content')
     <div class="page-header d-print-none">
@@ -15,7 +15,7 @@
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item"><a href="#">Inicio</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('frameworks.index') }}">Frameworks</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('frameworks.index') }}">Marcos</a></li>
                             <li class="breadcrumb-item active" aria-current="page">Detalle</li>
                         </ol>
                     </nav>
@@ -24,9 +24,9 @@
                             <circle cx="12" cy="12" r="2" />
                             <path d="M22 12c-2.667 4.667 -6 7 -10 7s-7.333 -2.333 -10 -7c2.667 -4.667 6 -7 10 -7s7.333 2.333 10 7" />
                         </svg>
-                        Framework #{{ $framework->id }}
+                        Marco #{{ $framework->id }}
                     </h2>
-                    <p class="text-muted mb-0">Consulta la información vigente del framework curricular y su período de aplicación.</p>
+                    <p class="text-muted mb-0">Consulta la información vigente del marco curricular y su período de aplicación.</p>
                 </div>
                 <div class="col-auto ms-auto d-print-none">
                     <a href="{{ route('frameworks.index') }}" class="btn btn-outline-secondary">Volver al listado</a>

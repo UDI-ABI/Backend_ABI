@@ -10,7 +10,7 @@
     use Illuminate\Support\Str;
 @endphp
 
-@section('title', 'Contenidos de Framework')
+@section('title', 'Contenidos del marco')
 
 @section('content')
     <div class="page-header d-print-none">
@@ -21,7 +21,7 @@
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item"><a href="{{ route('home') }}">Inicio</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Contenidos de framework</li>
+                            <li class="breadcrumb-item active" aria-current="page">Contenidos de marco</li>
                         </ol>
                     </nav>
 
@@ -31,10 +31,10 @@
                             <line x1="9" y1="9" x2="15" y2="9" />
                             <line x1="9" y1="15" x2="15" y2="15" />
                         </svg>
-                        Contenidos de framework
+                        Contenidos de marco
                         <span class="badge bg-primary ms-2">{{ $contentFrameworks->total() }}</span>
                     </h2>
-                    <p class="text-muted mb-0">Gestiona los contenidos que pertenecen a cada framework institucional.</p>
+                    <p class="text-muted mb-0">Gestiona los contenidos que pertenecen a cada marco institucional.</p>
                 </div>
 
                 <div class="col-auto ms-auto d-print-none">
@@ -77,7 +77,7 @@
                             </div>
                         </div>
                         <div class="col-12 col-lg-4">
-                            <label for="framework_id" class="form-label">Framework</label>
+                            <label for="framework_id" class="form-label">Marco</label>
                             <select name="framework_id" id="framework_id" class="form-select" onchange="this.form.submit()">
                                 <option value="">Todos</option>
                                 @foreach($frameworkOptions ?? [] as $id => $name)
@@ -106,7 +106,7 @@
                             <tr>
                                 <th class="w-1">#</th>
                                 <th class="text-truncate" style="max-width: 200px;">Nombre</th>
-                                <th class="text-truncate" style="max-width: 200px;">Framework</th>
+                                <th class="text-truncate" style="max-width: 200px;">Marco</th>
                                 <th class="text-truncate" style="max-width: 320px;">Descripción</th>
                                 <th class="w-1">Acciones</th>
                             </tr>

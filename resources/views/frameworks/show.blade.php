@@ -7,7 +7,7 @@
 --}}
 @extends('layouts.app')
 
-@section('title','Detalle Framework')
+@section('title','Detalle Marco')
 
 @section('content')
 <div class="page-body">

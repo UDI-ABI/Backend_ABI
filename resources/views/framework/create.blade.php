@@ -4,7 +4,7 @@
 --}}
 @extends('tablar::page')
 
-@section('title', 'Registrar framework')
+@section('title', 'Registrar marco')
 
 @section('content')
     <div class="page-header d-print-none">
@@ -14,7 +14,7 @@
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item"><a href="#">Inicio</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('frameworks.index') }}">Frameworks</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('frameworks.index') }}">Marcos</a></li>
                             <li class="breadcrumb-item active" aria-current="page">Crear</li>
                         </ol>
                     </nav>
@@ -24,9 +24,9 @@
                             <line x1="9" y1="9" x2="15" y2="9" />
                             <line x1="9" y1="15" x2="15" y2="15" />
                         </svg>
-                        Registrar framework
+                        Registrar marco
                     </h2>
-                    <p class="text-muted mb-0">Captura los datos principales del framework curricular para mantener la oferta académica ordenada.</p>
+                    <p class="text-muted mb-0">Captura los datos principales del marco curricular para mantener la oferta académica ordenada.</p>
                 </div>
                 <div class="col-auto ms-auto d-print-none">
                     <a href="{{ route('frameworks.index') }}" class="btn btn-outline-secondary">Volver al listado</a>

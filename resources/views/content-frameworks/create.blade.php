@@ -4,7 +4,7 @@
 --}}
 @extends('tablar::page')
 
-@section('title', 'Registrar contenido de framework')
+@section('title', 'Registrar contenido del marco')
 
 @section('content')
     <div class="page-header d-print-none">
@@ -14,7 +14,7 @@
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item"><a href="{{ route('home') }}">Inicio</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('content-frameworks.index') }}">Contenidos de framework</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('content-frameworks.index') }}">Contenidos del marco</a></li>
                             <li class="breadcrumb-item active" aria-current="page">Crear</li>
                         </ol>
                     </nav>
@@ -24,9 +24,9 @@
                             <path d="M12 5v14" />
                             <path d="M5 12h14" />
                         </svg>
-                        Registrar contenido de framework
+                        Registrar contenido del marco
                     </h2>
-                    <p class="text-muted mb-0">Captura la información del contenido y relaciónala con el framework correspondiente.</p>
+                    <p class="text-muted mb-0">Captura la información del contenido y relaciónala con el marco correspondiente.</p>
                 </div>
                 <div class="col-auto ms-auto d-print-none">
                     <a href="{{ route('content-frameworks.index') }}" class="btn btn-outline-secondary">Volver al listado</a>

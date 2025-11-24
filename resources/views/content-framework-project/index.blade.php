@@ -110,7 +110,7 @@
                             <tr>
                                 <th class="w-1">#</th>
                                 <th>Proyecto</th>
-                                <th>Contenido del framework</th>
+                                <th>Contenido del marco</th>
                                 <th class="w-1">Acciones</th>
                             </tr>
                         </thead>

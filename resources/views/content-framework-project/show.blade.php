@@ -25,7 +25,7 @@
                         </svg>
                         Detalle de asignación
                     </h2>
-                    <p class="text-muted mb-0">Revisa la información de la relación entre el proyecto y el contenido del framework.</p>
+                    <p class="text-muted mb-0">Revisa la información de la relación entre el proyecto y el contenido del marco.</p>
                 </div>
                 <div class="col-auto ms-auto d-print-none">
                     <div class="btn-list">

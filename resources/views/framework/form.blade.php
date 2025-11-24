@@ -9,7 +9,7 @@
 @endphp
 
 <div class="mb-3">
-    <label for="name" class="form-label required">Nombre del framework</label>
+    <label for="name" class="form-label required">Nombre del marco</label>
     <input
         type="text"
         id="name"
@@ -35,7 +35,7 @@
         rows="4"
         maxlength="1000"
         class="form-control {{ $errors->has('description') ? 'is-invalid' : '' }}"
-        placeholder="Resume los objetivos y el alcance de este framework."
+        placeholder="Resume los objetivos y el alcance de este marco."
         required
     >{{ old('description', $frameworkModel->description ?? '') }}</textarea>
     @error('description')
@@ -76,7 +76,7 @@
         @error('start_year')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
-        <small class="form-hint">Indica el año en que el framework entra en vigencia.</small>
+        <small class="form-hint">Indica el año en que el marco entra en vigencia.</small>
     </div>
     <div class="col-12 col-md-6">
         <label for="end_year" class="form-label">Año de finalización</label>
@@ -100,6 +100,6 @@
 @if($showSubmit)
     <div class="d-flex justify-content-end gap-2 mt-4">
         <a href="{{ route('frameworks.index') }}" class="btn btn-link">Cancelar</a>
-        <button type="submit" class="btn btn-primary">Guardar framework</button>
+        <button type="submit" class="btn btn-primary">Guardar marco</button>
     </div>
 @endif

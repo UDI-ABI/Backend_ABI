@@ -5,7 +5,7 @@
 --}}
 @extends('tablar::page')
 
-@section('title', 'Editar framework')
+@section('title', 'Editar marco')
 
 @section('content')
     <div class="page-header d-print-none">
@@ -15,7 +15,7 @@
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item"><a href="#">Inicio</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('frameworks.index') }}">Frameworks</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('frameworks.index') }}">Marcos</a></li>
                             <li class="breadcrumb-item active" aria-current="page">Editar</li>
                         </ol>
                     </nav>
@@ -25,9 +25,9 @@
                             <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" />
                             <path d="M16 5l3 3" />
                         </svg>
-                        Editar framework #{{ $framework->id }}
+                        Editar marco #{{ $framework->id }}
                     </h2>
-                    <p class="text-muted mb-0">Actualiza la información del framework y su período de vigencia.</p>
+                    <p class="text-muted mb-0">Actualiza la información del marco y su período de vigencia.</p>
                 </div>
                 <div class="col-auto ms-auto d-print-none">
                     <a href="{{ route('frameworks.show', $framework) }}" class="btn btn-outline-primary">Ver detalle</a>

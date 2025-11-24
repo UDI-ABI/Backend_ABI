@@ -32,7 +32,7 @@
     </div>
 
     <div class="col-12 col-lg-6">
-        <label for="content_framework_id" class="form-label required">Contenido del framework</label>
+        <label for="content_framework_id" class="form-label required">Contenido del marco</label>
         <select
             id="content_framework_id"
             name="content_framework_id"

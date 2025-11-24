@@ -14,7 +14,7 @@
     $perPageOptions = $perPageOptions ?? [10, 20, 30];
 @endphp
 
-@section('title', 'Gestión de Frameworks')
+@section('title', 'Gestión de Marcos')
 
 @section('content')
     <div class="page-header d-print-none">
@@ -25,7 +25,7 @@
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item"><a href="#">Inicio</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Frameworks</li>
+                            <li class="breadcrumb-item active" aria-current="page">Marcos</li>
                         </ol>
                     </nav>
                     <h2 class="page-title d-flex align-items-center">
@@ -34,7 +34,7 @@
                             <line x1="9" y1="9" x2="15" y2="9" />
                             <line x1="9" y1="15" x2="15" y2="15" />
                         </svg>
-                        Gestión de Frameworks
+                        Gestión de Marcos
                         <span class="badge bg-azure ms-2">{{ $frameworks->total() }}</span>
                     </h2>
                     <p class="text-muted mb-0">Administra los marcos curriculares y mantén su vigencia actualizada.</p>
@@ -46,7 +46,7 @@
                             <line x1="12" y1="5" x2="12" y2="19" />
                             <line x1="5" y1="12" x2="19" y2="12" />
                         </svg>
-                        Nuevo framework
+                        Nuevo marco
                     </a>
                 </div>
             </div>

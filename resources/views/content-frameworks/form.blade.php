@@ -42,7 +42,7 @@
             name="description"
             class="form-control {{ $errors->has('description') ? 'is-invalid' : '' }}"
             rows="4"
-            placeholder="Describe el objetivo del contenido dentro del framework."
+            placeholder="Describe el objetivo del contenido dentro del marco."
             maxlength="1000"
             required
         >{{ old('description', $record->description ?? '') }}</textarea>
@@ -53,7 +53,7 @@
     </div>
 
     <div class="col-12 col-lg-6">
-        <label for="framework_id" class="form-label required">Framework asociado</label>
+        <label for="framework_id" class="form-label required">Marco asociado</label>
         <select
             id="framework_id"
             name="framework_id"
@@ -70,7 +70,7 @@
         @error('framework_id')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
-        <small class="form-hint">El contenido quedará vinculado a este framework.</small>
+        <small class="form-hint">El contenido quedará vinculado a este marco.</small>
         @if($preselectedFrameworkId)
             <div class="mt-2">
                 <a class="badge bg-azure-lt text-decoration-none" href="{{ route('frameworks.show', $preselectedFrameworkId) }}">Ver framework seleccionado</a>

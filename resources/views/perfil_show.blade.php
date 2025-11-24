@@ -58,14 +58,6 @@
 
                     </div>
 
-                    @if(auth()->user() && method_exists(auth()->user(), 'hasRole') && auth()->user()->hasRole('research_staff'))
-                        <div class="text-center mt-4">
-                            <a href="{{ route('perfil.edit') }}" class="btn btn-primary px-4">
-                                Editar Perfil
-                            </a>
-                        </div>
-                    @endif
-
                 </div>
             </div>
         </div>

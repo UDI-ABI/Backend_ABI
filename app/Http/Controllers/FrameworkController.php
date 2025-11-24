@@ -109,7 +109,7 @@ class FrameworkController extends Controller
                 'perPage' => $perPage,
                 'perPageOptions' => $perPageOptions,
                 'i' => 0,
-                'error' => 'Ocurrió un error al cargar los frameworks.',
+                'error' => 'Ocurrió un error al cargar los marcos.',
             ]);
         }
     }
@@ -136,8 +136,8 @@ class FrameworkController extends Controller
         try {
             // Validar datos de entrada
             $validatedData = $request->validate(ResearchStaffFramework::$rules, [
-                'name.required' => 'El nombre del framework es obligatorio.',
-                'name.unique' => 'Ya existe un framework con este nombre.',
+                'name.required' => 'El nombre del marco es obligatorio.',
+                'name.unique' => 'Ya existe un marco con este nombre.',
                 'description.required' => 'La descripción es obligatoria.',
                 'description.min' => 'La descripción debe tener al menos 10 caracteres.',
                 'link.url' => 'El enlace debe ser una URL válida.',
