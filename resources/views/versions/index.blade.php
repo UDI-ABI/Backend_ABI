@@ -160,6 +160,8 @@
                 perPage: 10,
                 projectId: null,
                 currentId: null,
+                searchTitle: '',
+                programId: null,
             };
 
             const icons = {
@@ -232,13 +234,38 @@
 
             function buildQuery(page = 1) {
                 const params = new URLSearchParams();
+
                 params.set('page', page);
                 params.set('per_page', state.perPage);
+
                 if (state.projectId) {
                     params.set('project_id', state.projectId);
                 }
+
+                // Nuevo filtro: título
+                if (state.searchTitle && state.searchTitle.trim() !== '') {
+                    params.set('title', state.searchTitle.trim());
+                }
+
+                // Nuevo filtro: programa
+                if (state.programId) {
+                    params.set('program_id', state.programId);
+                }
+
                 return `${apiBase}?${params.toString()}`;
             }
+
+            filtersForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                // Nuevos filtros
+                state.searchTitle = document.getElementById('filter-title')?.value || '';
+                state.programId = document.getElementById('filter-program')?.value || '';
+
+                state.page = 1;
+                fetchVersions(buildQuery());
+            });
+
 
             function renderTable(data) {
                 const items = Array.isArray(data?.data) ? data.data : [];

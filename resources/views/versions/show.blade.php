@@ -143,7 +143,7 @@
 
                     const data = await response.json();
 
-                    projectElement.textContent = data.project ? `${data.project.name ?? 'Proyecto sin nombre'} (#${data.project.id})` : `ID ${data.project_id ?? '—'}`;
+                    projectElement.textContent = data.project ? `${data.project.title ?? 'Proyecto sin nombre'} (#${data.project.id})` : `ID ${data.project_id ?? '—'}`;
                     createdElement.textContent = formatDate(data.created_at);
                     updatedElement.textContent = formatDate(data.updated_at);
 

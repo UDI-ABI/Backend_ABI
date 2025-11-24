@@ -31,19 +31,39 @@ class VersionController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            // Validar y obtener parámetro de paginación
+            // Validación de paginación
             $perPage = (int) $request->query('per_page', 15);
             $perPage = $perPage > 0 ? min($perPage, 100) : 15;
 
-            // Query base con relaciones
+            // Query base
             $query = ResearchStaffVersion::query()->with('project');
 
-            // Filtrar por proyecto si se especifica
+            /**
+             * FILTRO: ID de proyecto
+             */
             if ($projectId = $request->query('project_id')) {
                 $query->where('project_id', $projectId);
             }
 
-            // Obtener resultados paginados
+            /**
+             * FILTRO: Título de proyecto
+             */
+            if ($title = $request->query('title')) {
+                $query->whereHas('project', function ($q) use ($title) {
+                    $q->where('title', 'like', "%{$title}%");
+                });
+            }
+
+            /**
+             * FILTRO: Programa (project → professors → cityProgram → program_id)
+             */
+            if ($programId = $request->query('program_id')) {
+                $query->whereHas('project.professors.cityProgram', function ($q) use ($programId) {
+                    $q->where('program_id', $programId);
+                });
+            }
+
+            // Orden + Paginación
             $versions = $query
                 ->orderByDesc('created_at')
                 ->paginate($perPage)
@@ -59,6 +79,7 @@ class VersionController extends Controller
             ], 500);
         }
     }
+
 
     /**
      * Crea una nueva versión para un proyecto
