@@ -37,9 +37,7 @@
                     <p>{{$userProgram}}</p>
                     <p class="text-muted mb-4">Último acceso: <strong>{{ now()->format('d/m/Y H:i') }}</strong></p>
                     <div class="text-muted fs-5 mb-4">
-                        ABI es un sistema web integral para la gestión de contenidos y proyectos de grado. Facilita la
-                        administración de frameworks de investigación, recursos académicos, estudiantes, docentes y procesos
-                        educativos bilingües apoyados por la UDI.
+                        ABI es un sistema web para la gestión de ideas de proyectos de grado. Aquí podrás realizar todo el proceso de propuesta, selección, evaluación y seguimiento general de las ideas de proyecto de grado.
                     </div>
                     <div class="d-flex flex-column flex-md-row justify-content-center gap-3">
                         <form method="POST" action="{{ route('logout') }}">
