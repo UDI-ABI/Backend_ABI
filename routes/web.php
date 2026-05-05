@@ -22,6 +22,9 @@ use App\Http\Controllers\BankApprovedIdeasForStudentsController;
 use App\Http\Controllers\BankApprovedIdeasForProfessorsController;
 use App\Http\Controllers\CityProgramController;
 use App\Http\Controllers\BankApprovedIdeasAssignController;
+use App\Http\Controllers\Formats\FormatoActaReunionController;
+use App\Http\Controllers\Formats\FormatoIdeasEstudianteController;
+use App\Http\Controllers\Formats\FormatoFichaPropuestaController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -154,4 +157,27 @@ Route::middleware(['auth', 'role:committee_leader'])->group(function () {
 
     Route::get('professor/projects/approved/{project}', [BankApprovedIdeasForProfessorsController::class, 'show'])
         ->name('professor.projects.approved.show');
+});
+
+// =============================================================================
+// MÓDULO DE FORMATOS
+// Responsable del módulo: líder del equipo de formatos
+// Sub-módulos: Acta de Reunión (E1), Ideas Estudiante (E2), Ficha Propuesta (E3)
+// =============================================================================
+
+// Hub de entrada al módulo (todos los roles autenticados)
+Route::middleware(['auth'])->group(function () {
+    Route::get('formatos', fn() => view('formats.index'))->name('formatos.index');
+});
+
+// Acta de Reunión — acceso: professor, committee_leader, research_staff
+Route::middleware(['auth', 'role:research_staff,professor,committee_leader'])->prefix('formatos')->name('formatos.')->group(function () {
+    Route::resource('acta-reunion', FormatoActaReunionController::class);
+    Route::resource('ficha-propuesta', FormatoFichaPropuestaController::class);
+    Route::get('acta-reunion/{actaReunion}/pdf',[FormatoActaReunionController::class, 'exportPdf'])->name('acta-reunion.pdf');
+});
+
+// Formato de Ideas de Estudiante — acceso: student, research_staff
+Route::middleware(['auth', 'role:research_staff,student'])->prefix('formatos')->name('formatos.')->group(function () {
+    Route::resource('ideas-estudiante', FormatoIdeasEstudianteController::class);
 });

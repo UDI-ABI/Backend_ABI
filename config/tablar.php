@@ -318,6 +318,36 @@ return [
     ],
 
     // =================================================================
+    // SECCIÓN: FORMATOS (Todos los roles autenticados)
+    // =================================================================
+    [
+        'header' => 'Formatos',
+    ],
+    [
+        'text' => 'Módulo de Formatos',
+        'icon' => 'ti ti-file-text',
+        'route' => 'formatos.index',
+    ],
+    [
+        'text' => 'Acta de Reunión',
+        'icon' => 'ti ti-writing',
+        'route' => 'formatos.acta-reunion.index',
+        'hasAnyRole' => ['research_staff', 'professor', 'committee_leader'],
+    ],
+    [
+        'text' => 'Ideas de Estudiante',
+        'icon' => 'ti ti-bulb',
+        'route' => 'formatos.ideas-estudiante.index',
+        'hasAnyRole' => ['research_staff', 'student'],
+    ],
+    [
+        'text' => 'Ficha de Propuesta',
+        'icon' => 'ti ti-file-description',
+        'route' => 'formatos.ficha-propuesta.index',
+        'hasAnyRole' => ['research_staff', 'professor', 'committee_leader'],
+    ],
+
+    // =================================================================
     // SECCIÓN: USUARIOS Y FORMULARIOS (Research Staff)
     // =================================================================
     [
